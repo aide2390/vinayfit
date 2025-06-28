@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
@@ -20,6 +20,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   useFrameworkReady();
+  const [showCustomSplash, setShowCustomSplash] = useState(true);
 
   const [fontsLoaded, fontError] = useFonts({
     'Inter-Regular': Inter_400Regular,
@@ -30,12 +31,19 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
+      // Hide the default splash screen
       SplashScreen.hideAsync();
-      // Initialize default data when app starts
+      
+      // Initialize app data
       initializeDefaultData();
       
       // Initialize notifications
       initializeNotifications();
+      
+      // Show custom splash for a minimum duration
+      setTimeout(() => {
+        setShowCustomSplash(false);
+      }, 3000); // Show for 3 seconds minimum
     }
   }, [fontsLoaded, fontError]);
 
@@ -63,6 +71,7 @@ export default function RootLayout() {
     }
   };
 
+  // Show loading state while fonts are loading
   if (!fontsLoaded && !fontError) {
     return null;
   }
@@ -71,18 +80,25 @@ export default function RootLayout() {
     <AuthProvider>
       <UserProvider>
         <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="templates" />
-          <Stack.Screen name="create-template" />
-          <Stack.Screen name="workout-plans" />
-          <Stack.Screen name="create-plan" />
-          <Stack.Screen name="set-fitness-goal" />
-          <Stack.Screen name="goal-countdown" />
-          <Stack.Screen name="fitness-goals" />
-          <Stack.Screen name="+not-found" />
+          {showCustomSplash ? (
+            <Stack.Screen name="splash" />
+          ) : (
+            <>
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="templates" />
+              <Stack.Screen name="create-template" />
+              <Stack.Screen name="workout-plans" />
+              <Stack.Screen name="create-plan" />
+              <Stack.Screen name="set-fitness-goal" />
+              <Stack.Screen name="goal-countdown" />
+              <Stack.Screen name="fitness-goals" />
+              <Stack.Screen name="step-tracker" />
+              <Stack.Screen name="+not-found" />
+            </>
+          )}
         </Stack>
-        <StatusBar style="dark" />
+        <StatusBar style="auto" />
       </UserProvider>
     </AuthProvider>
   );
