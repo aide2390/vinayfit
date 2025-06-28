@@ -13,7 +13,28 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Plus, X, Camera, Image as ImageIcon, Grid3x3 as Grid3X3, List, Calendar, Weight, Percent, MoveHorizontal as MoreHorizontal, TrendingUp, Eye, Download, Share, Filter, Search, ChevronDown, Tag } from 'lucide-react-native';
+import { 
+  ArrowLeft, 
+  Plus, 
+  X, 
+  Camera, 
+  Image as ImageIcon, 
+  Grid3x3 as Grid3X3, 
+  List, 
+  Calendar, 
+  Weight, 
+  Percent, 
+  MoreHorizontal,
+  TrendingUp,
+  Target,
+  Star,
+  Filter,
+  Search,
+  Share,
+  Download,
+  Eye,
+  Zap
+} from 'lucide-react-native';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
@@ -25,11 +46,7 @@ interface ProgressPhoto {
   imageUri: string;
   weight?: number;
   bodyFat?: number;
-  muscleMass?: number;
-  date: string;
-  time: string;
-  tags: string[];
-  notes?: string;
+  musclePercentage?: number;
   measurements?: {
     chest?: number;
     waist?: number;
@@ -37,33 +54,21 @@ interface ProgressPhoto {
     arms?: number;
     thighs?: number;
   };
+  date: string;
+  time: string;
+  tags?: string[];
   pose: 'front' | 'side' | 'back' | 'custom';
+  notes?: string;
+  mood?: 'motivated' | 'confident' | 'determined' | 'proud' | 'focused';
 }
 
-interface PhotoComparison {
-  before: ProgressPhoto;
-  after: ProgressPhoto;
-  daysDifference: number;
-  weightChange?: number;
-  bodyFatChange?: number;
+interface ComparisonData {
+  photo1: ProgressPhoto;
+  photo2: ProgressPhoto;
+  weightChange: number;
+  bodyFatChange: number;
+  daysBetween: number;
 }
-
-const POSE_OPTIONS = [
-  { id: 'front', label: 'Front View', emoji: '🧍‍♂️' },
-  { id: 'side', label: 'Side View', emoji: '🚶‍♂️' },
-  { id: 'back', label: 'Back View', emoji: '🧍‍♀️' },
-  { id: 'custom', label: 'Custom', emoji: '📸' },
-];
-
-const FILTER_OPTIONS = [
-  { id: 'all', label: 'All Photos' },
-  { id: 'thisWeek', label: 'This Week' },
-  { id: 'thisMonth', label: 'This Month' },
-  { id: 'last3Months', label: 'Last 3 Months' },
-  { id: 'front', label: 'Front View' },
-  { id: 'side', label: 'Side View' },
-  { id: 'back', label: 'Back View' },
-];
 
 export default function ProgressPhotoScreen() {
   const colorScheme = useColorScheme();
@@ -73,69 +78,78 @@ export default function ProgressPhotoScreen() {
   const [photos, setPhotos] = useState<ProgressPhoto[]>([
     {
       id: '1',
-      imageUri: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg',
+      imageUri: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=800',
       weight: 69.5,
       bodyFat: 15,
-      muscleMass: 45.2,
-      date: '2025-06-03',
-      time: '08:30',
-      tags: ['morning', 'fasted'],
-      notes: 'Starting my fitness journey!',
+      musclePercentage: 42,
       measurements: {
-        chest: 95,
-        waist: 82,
-        arms: 32,
+        chest: 102,
+        waist: 81,
+        arms: 35,
       },
-      pose: 'front'
+      date: '2025-01-15',
+      time: '08:30',
+      tags: ['morning', 'baseline'],
+      pose: 'front',
+      notes: 'Starting my fitness journey!',
+      mood: 'motivated'
     },
     {
       id: '2',
-      imageUri: 'https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg',
-      weight: 68.8,
-      bodyFat: 14.2,
-      muscleMass: 45.8,
-      date: '2025-05-20',
-      time: '09:15',
-      tags: ['progress', 'side'],
-      pose: 'side'
+      imageUri: 'https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=800',
+      weight: 68.2,
+      bodyFat: 13.5,
+      musclePercentage: 44,
+      measurements: {
+        chest: 104,
+        waist: 79,
+        arms: 36,
+      },
+      date: '2025-01-08',
+      time: '07:45',
+      tags: ['progress', 'week4'],
+      pose: 'front',
+      notes: 'Feeling stronger every day!',
+      mood: 'confident'
     },
     {
       id: '3',
-      imageUri: 'https://images.pexels.com/photos/3822356/pexels-photo-3822356.jpeg',
-      weight: 70.2,
-      bodyFat: 16.1,
-      muscleMass: 44.5,
-      date: '2025-05-06',
-      time: '07:45',
-      tags: ['baseline'],
-      pose: 'back'
+      imageUri: 'https://images.pexels.com/photos/3822356/pexels-photo-3822356.jpeg?auto=compress&cs=tinysrgb&w=800',
+      weight: 67.8,
+      bodyFat: 12.8,
+      musclePercentage: 45,
+      date: '2025-01-01',
+      time: '09:15',
+      tags: ['newyear', 'goals'],
+      pose: 'side',
+      notes: 'New year, new me!',
+      mood: 'determined'
     }
   ]);
 
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'comparison'>('grid');
-  const [selectedFilter, setSelectedFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [showCameraModal, setShowCameraModal] = useState(false);
-  const [showFilterModal, setShowFilterModal] = useState(false);
-  const [showComparisonModal, setShowComparisonModal] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<ProgressPhoto | null>(null);
-  const [comparisonPhotos, setComparisonPhotos] = useState<{ before: ProgressPhoto | null; after: ProgressPhoto | null }>({
-    before: null,
-    after: null
-  });
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
+  const [showComparison, setShowComparison] = useState(false);
+  const [comparisonData, setComparisonData] = useState<ComparisonData | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterPose, setFilterPose] = useState<string>('all');
+  const [filterTimeframe, setFilterTimeframe] = useState<string>('all');
   
   // Form states
   const [newPhoto, setNewPhoto] = useState<Partial<ProgressPhoto>>({
     weight: undefined,
     bodyFat: undefined,
-    muscleMass: undefined,
+    musclePercentage: undefined,
+    measurements: {},
     date: new Date().toISOString().split('T')[0],
     time: new Date().toTimeString().slice(0, 5),
     tags: [],
     pose: 'front',
-    measurements: {}
+    mood: 'motivated'
   });
   const [tempImageUri, setTempImageUri] = useState<string>('');
   const [newTag, setNewTag] = useState('');
@@ -145,41 +159,13 @@ export default function ProgressPhotoScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
 
-  const filteredPhotos = photos.filter(photo => {
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const matchesSearch = 
-        photo.tags.some(tag => tag.toLowerCase().includes(query)) ||
-        photo.notes?.toLowerCase().includes(query) ||
-        photo.pose.toLowerCase().includes(query);
-      if (!matchesSearch) return false;
-    }
-
-    // Filter by selected filter
-    if (selectedFilter === 'all') return true;
-    
-    const photoDate = new Date(photo.date);
-    const now = new Date();
-    
-    switch (selectedFilter) {
-      case 'thisWeek':
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        return photoDate >= weekAgo;
-      case 'thisMonth':
-        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        return photoDate >= monthAgo;
-      case 'last3Months':
-        const threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-        return photoDate >= threeMonthsAgo;
-      case 'front':
-      case 'side':
-      case 'back':
-        return photo.pose === selectedFilter;
-      default:
-        return true;
-    }
-  });
+  const moodEmojis = {
+    motivated: '🔥',
+    confident: '💪',
+    determined: '🎯',
+    proud: '⭐',
+    focused: '⚡'
+  };
 
   const handleAddPhoto = () => {
     setShowAddModal(true);
@@ -187,7 +173,7 @@ export default function ProgressPhotoScreen() {
 
   const handleTakePhoto = async () => {
     if (Platform.OS === 'web') {
-      setTempImageUri('https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg');
+      setTempImageUri('https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=800');
       setShowCameraModal(false);
       setShowPhotoModal(true);
     } else {
@@ -203,7 +189,13 @@ export default function ProgressPhotoScreen() {
   };
 
   const handleOpenAlbum = () => {
-    setTempImageUri('https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg');
+    const sampleImages = [
+      'https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/3822356/pexels-photo-3822356.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=800'
+    ];
+    const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+    setTempImageUri(randomImage);
     setShowAddModal(false);
     setShowPhotoModal(true);
   };
@@ -231,13 +223,14 @@ export default function ProgressPhotoScreen() {
       imageUri: tempImageUri,
       weight: newPhoto.weight,
       bodyFat: newPhoto.bodyFat,
-      muscleMass: newPhoto.muscleMass,
+      musclePercentage: newPhoto.musclePercentage,
+      measurements: newPhoto.measurements,
       date: newPhoto.date || new Date().toISOString().split('T')[0],
       time: newPhoto.time || new Date().toTimeString().slice(0, 5),
       tags: newPhoto.tags || [],
+      pose: newPhoto.pose || 'front',
       notes: newPhoto.notes,
-      measurements: newPhoto.measurements || {},
-      pose: newPhoto.pose || 'front'
+      mood: newPhoto.mood || 'motivated'
     };
 
     setPhotos(prev => [newPhotoData, ...prev]);
@@ -246,12 +239,13 @@ export default function ProgressPhotoScreen() {
     setNewPhoto({
       weight: undefined,
       bodyFat: undefined,
-      muscleMass: undefined,
+      musclePercentage: undefined,
+      measurements: {},
       date: new Date().toISOString().split('T')[0],
       time: new Date().toTimeString().slice(0, 5),
       tags: [],
       pose: 'front',
-      measurements: {}
+      mood: 'motivated'
     });
     setTempImageUri('');
     setShowPhotoModal(false);
@@ -274,231 +268,198 @@ export default function ProgressPhotoScreen() {
     }));
   };
 
-  const handleComparePhotos = () => {
-    if (comparisonPhotos.before && comparisonPhotos.after) {
-      setShowComparisonModal(true);
+  const handlePhotoSelect = (photoId: string) => {
+    if (viewMode === 'comparison') {
+      setSelectedPhotos(prev => {
+        if (prev.includes(photoId)) {
+          return prev.filter(id => id !== photoId);
+        } else if (prev.length < 2) {
+          const newSelection = [...prev, photoId];
+          if (newSelection.length === 2) {
+            const photo1 = photos.find(p => p.id === newSelection[0])!;
+            const photo2 = photos.find(p => p.id === newSelection[1])!;
+            const comparison = calculateComparison(photo1, photo2);
+            setComparisonData(comparison);
+            setShowComparison(true);
+          }
+          return newSelection;
+        }
+        return prev;
+      });
     } else {
-      Alert.alert('Select Photos', 'Please select two photos to compare');
+      setSelectedPhoto(photos.find(p => p.id === photoId) || null);
     }
   };
 
-  const calculateProgress = (): PhotoComparison | null => {
-    if (!comparisonPhotos.before || !comparisonPhotos.after) return null;
-
-    const beforeDate = new Date(comparisonPhotos.before.date);
-    const afterDate = new Date(comparisonPhotos.after.date);
-    const daysDifference = Math.abs((afterDate.getTime() - beforeDate.getTime()) / (1000 * 60 * 60 * 24));
+  const calculateComparison = (photo1: ProgressPhoto, photo2: ProgressPhoto): ComparisonData => {
+    const date1 = new Date(photo1.date);
+    const date2 = new Date(photo2.date);
+    const daysBetween = Math.abs((date2.getTime() - date1.getTime()) / (1000 * 60 * 60 * 24));
+    
+    const weightChange = (photo2.weight || 0) - (photo1.weight || 0);
+    const bodyFatChange = (photo2.bodyFat || 0) - (photo1.bodyFat || 0);
 
     return {
-      before: comparisonPhotos.before,
-      after: comparisonPhotos.after,
-      daysDifference: Math.round(daysDifference),
-      weightChange: comparisonPhotos.after.weight && comparisonPhotos.before.weight 
-        ? comparisonPhotos.after.weight - comparisonPhotos.before.weight 
-        : undefined,
-      bodyFatChange: comparisonPhotos.after.bodyFat && comparisonPhotos.before.bodyFat 
-        ? comparisonPhotos.after.bodyFat - comparisonPhotos.before.bodyFat 
-        : undefined,
+      photo1: date1 < date2 ? photo1 : photo2,
+      photo2: date1 < date2 ? photo2 : photo1,
+      weightChange: date1 < date2 ? weightChange : -weightChange,
+      bodyFatChange: date1 < date2 ? bodyFatChange : -bodyFatChange,
+      daysBetween: Math.round(daysBetween)
     };
   };
 
-  const renderGridView = () => (
-    <View style={styles.gridContainer}>
-      {filteredPhotos.map((photo, index) => (
-        <TouchableOpacity
-          key={photo.id}
-          style={styles.gridItem}
-          onPress={() => setSelectedPhoto(photo)}
-          onLongPress={() => {
-            if (!comparisonPhotos.before) {
-              setComparisonPhotos(prev => ({ ...prev, before: photo }));
-            } else if (!comparisonPhotos.after && photo.id !== comparisonPhotos.before.id) {
-              setComparisonPhotos(prev => ({ ...prev, after: photo }));
-            }
-          }}
-        >
-          <Image source={{ uri: photo.imageUri }} style={styles.gridImage} />
-          <View style={styles.gridOverlay}>
-            <Text style={styles.gridDate}>
-              {new Date(photo.date).toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric' 
-              })}
-            </Text>
-            <View style={styles.gridPose}>
-              <Text style={styles.gridPoseText}>{photo.pose.toUpperCase()}</Text>
-            </View>
-          </View>
-          {(comparisonPhotos.before?.id === photo.id || comparisonPhotos.after?.id === photo.id) && (
-            <View style={styles.selectedIndicator}>
-              <Text style={styles.selectedText}>
-                {comparisonPhotos.before?.id === photo.id ? '1' : '2'}
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
+  const getFilteredPhotos = () => {
+    let filtered = photos;
 
-  const renderListView = () => (
-    <View style={styles.listContainer}>
-      {filteredPhotos.map((photo) => (
-        <TouchableOpacity
-          key={photo.id}
-          style={styles.listItem}
-          onPress={() => setSelectedPhoto(photo)}
-        >
-          <Image source={{ uri: photo.imageUri }} style={styles.listImage} />
-          <View style={styles.listContent}>
-            <View style={styles.listHeader}>
-              <Text style={styles.listDate}>
-                {new Date(photo.date).toLocaleDateString('en-US', { 
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric'
-                })}
-              </Text>
-              <Text style={styles.listTime}>{photo.time}</Text>
-            </View>
-            <View style={styles.listMetrics}>
-              {photo.weight && (
-                <Text style={styles.listMetric}>Weight: {photo.weight} kg</Text>
-              )}
-              {photo.bodyFat && (
-                <Text style={styles.listMetric}>Body Fat: {photo.bodyFat}%</Text>
-              )}
-              {photo.muscleMass && (
-                <Text style={styles.listMetric}>Muscle: {photo.muscleMass} kg</Text>
-              )}
-            </View>
-            {photo.tags.length > 0 && (
-              <View style={styles.tagContainer}>
-                {photo.tags.slice(0, 3).map((tag, index) => (
-                  <View key={index} style={styles.tag}>
-                    <Text style={styles.tagText}>{tag}</Text>
-                  </View>
-                ))}
-                {photo.tags.length > 3 && (
-                  <Text style={styles.moreTagsText}>+{photo.tags.length - 3}</Text>
-                )}
-              </View>
-            )}
-          </View>
-          <View style={styles.listActions}>
-            <TouchableOpacity style={styles.listActionButton}>
-              <Eye size={16} color={colors.textSecondary} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.listActionButton}>
-              <Share size={16} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
+    if (searchQuery) {
+      filtered = filtered.filter(photo =>
+        photo.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        photo.notes?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
 
-  const renderComparisonView = () => {
-    const progress = calculateProgress();
+    if (filterPose !== 'all') {
+      filtered = filtered.filter(photo => photo.pose === filterPose);
+    }
+
+    if (filterTimeframe !== 'all') {
+      const now = new Date();
+      const filterDate = new Date();
+      
+      switch (filterTimeframe) {
+        case 'week':
+          filterDate.setDate(now.getDate() - 7);
+          break;
+        case 'month':
+          filterDate.setMonth(now.getMonth() - 1);
+          break;
+        case '3months':
+          filterDate.setMonth(now.getMonth() - 3);
+          break;
+      }
+      
+      if (filterTimeframe !== 'all') {
+        filtered = filtered.filter(photo => new Date(photo.date) >= filterDate);
+      }
+    }
+
+    return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  };
+
+  const renderGridView = () => {
+    const filteredPhotos = getFilteredPhotos();
     
     return (
-      <View style={styles.comparisonContainer}>
-        <View style={styles.comparisonHeader}>
-          <Text style={styles.comparisonTitle}>Photo Comparison</Text>
-          {progress && (
-            <Text style={styles.comparisonSubtitle}>
-              {progress.daysDifference} days progress
-            </Text>
-          )}
-        </View>
-
-        <View style={styles.comparisonPhotos}>
-          <View style={styles.comparisonPhotoContainer}>
-            <Text style={styles.comparisonLabel}>Before</Text>
-            {comparisonPhotos.before ? (
-              <Image 
-                source={{ uri: comparisonPhotos.before.imageUri }} 
-                style={styles.comparisonImage} 
-              />
-            ) : (
-              <TouchableOpacity 
-                style={styles.comparisonPlaceholder}
-                onPress={() => Alert.alert('Select Photo', 'Long press on a photo in grid view to select')}
-              >
-                <Plus size={32} color={colors.textTertiary} />
-                <Text style={styles.placeholderText}>Select Before</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <View style={styles.comparisonPhotoContainer}>
-            <Text style={styles.comparisonLabel}>After</Text>
-            {comparisonPhotos.after ? (
-              <Image 
-                source={{ uri: comparisonPhotos.after.imageUri }} 
-                style={styles.comparisonImage} 
-              />
-            ) : (
-              <TouchableOpacity 
-                style={styles.comparisonPlaceholder}
-                onPress={() => Alert.alert('Select Photo', 'Long press on a photo in grid view to select')}
-              >
-                <Plus size={32} color={colors.textTertiary} />
-                <Text style={styles.placeholderText}>Select After</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
-        {progress && (
-          <View style={styles.progressStats}>
-            <Text style={styles.progressTitle}>Progress Summary</Text>
-            
-            <View style={styles.progressGrid}>
-              {progress.weightChange !== undefined && (
-                <View style={styles.progressItem}>
-                  <Text style={styles.progressValue}>
-                    {progress.weightChange > 0 ? '+' : ''}{progress.weightChange.toFixed(1)} kg
-                  </Text>
-                  <Text style={styles.progressLabel}>Weight Change</Text>
-                </View>
-              )}
-              
-              {progress.bodyFatChange !== undefined && (
-                <View style={styles.progressItem}>
-                  <Text style={styles.progressValue}>
-                    {progress.bodyFatChange > 0 ? '+' : ''}{progress.bodyFatChange.toFixed(1)}%
-                  </Text>
-                  <Text style={styles.progressLabel}>Body Fat Change</Text>
-                </View>
-              )}
-              
-              <View style={styles.progressItem}>
-                <Text style={styles.progressValue}>{progress.daysDifference}</Text>
-                <Text style={styles.progressLabel}>Days</Text>
-              </View>
-            </View>
-          </View>
-        )}
-
-        <View style={styles.comparisonActions}>
-          <TouchableOpacity 
-            style={styles.clearButton}
-            onPress={() => setComparisonPhotos({ before: null, after: null })}
+      <View style={styles.gridContainer}>
+        {filteredPhotos.map((photo) => (
+          <TouchableOpacity
+            key={photo.id}
+            style={[
+              styles.gridItem,
+              selectedPhotos.includes(photo.id) && styles.selectedGridItem
+            ]}
+            onPress={() => handlePhotoSelect(photo.id)}
           >
-            <Text style={styles.clearButtonText}>Clear Selection</Text>
+            <Image source={{ uri: photo.imageUri }} style={styles.gridImage} />
+            <View style={styles.gridOverlay}>
+              <Text style={styles.gridDate}>
+                {new Date(photo.date).toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric' 
+                })}
+              </Text>
+              {photo.mood && (
+                <Text style={styles.gridMood}>
+                  {moodEmojis[photo.mood]}
+                </Text>
+              )}
+            </View>
+            {selectedPhotos.includes(photo.id) && (
+              <View style={styles.selectionIndicator}>
+                <Text style={styles.selectionNumber}>
+                  {selectedPhotos.indexOf(photo.id) + 1}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
-          
-          {progress && (
-            <TouchableOpacity style={styles.shareButton}>
-              <Share size={16} color="#FFFFFF" />
-              <Text style={styles.shareButtonText}>Share Progress</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        ))}
       </View>
     );
   };
+
+  const renderListView = () => {
+    const filteredPhotos = getFilteredPhotos();
+    
+    return (
+      <View style={styles.listContainer}>
+        {filteredPhotos.map((photo) => (
+          <TouchableOpacity
+            key={photo.id}
+            style={styles.listItem}
+            onPress={() => handlePhotoSelect(photo.id)}
+          >
+            <Image source={{ uri: photo.imageUri }} style={styles.listImage} />
+            <View style={styles.listContent}>
+              <View style={styles.listHeader}>
+                <Text style={styles.listDate}>
+                  {new Date(photo.date).toLocaleDateString('en-US', { 
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </Text>
+                {photo.mood && (
+                  <Text style={styles.listMood}>
+                    {moodEmojis[photo.mood]}
+                  </Text>
+                )}
+              </View>
+              
+              <View style={styles.listMetrics}>
+                {photo.weight && (
+                  <Text style={styles.listMetric}>Weight: {photo.weight} kg</Text>
+                )}
+                {photo.bodyFat && (
+                  <Text style={styles.listMetric}>Body Fat: {photo.bodyFat}%</Text>
+                )}
+                {photo.musclePercentage && (
+                  <Text style={styles.listMetric}>Muscle: {photo.musclePercentage}%</Text>
+                )}
+              </View>
+              
+              {photo.tags && photo.tags.length > 0 && (
+                <View style={styles.tagContainer}>
+                  {photo.tags.slice(0, 3).map((tag, index) => (
+                    <View key={index} style={styles.tag}>
+                      <Text style={styles.tagText}>{tag}</Text>
+                    </View>
+                  ))}
+                  {photo.tags.length > 3 && (
+                    <Text style={styles.moreTagsText}>+{photo.tags.length - 3}</Text>
+                  )}
+                </View>
+              )}
+              
+              {photo.notes && (
+                <Text style={styles.listNotes} numberOfLines={2}>
+                  {photo.notes}
+                </Text>
+              )}
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
+
+  const renderComparisonView = () => (
+    <View style={styles.comparisonContainer}>
+      <Text style={styles.comparisonInstructions}>
+        Select two photos to compare your progress
+      </Text>
+      {renderGridView()}
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -510,48 +471,98 @@ export default function ProgressPhotoScreen() {
         <Text style={styles.title}>Progress Photos</Text>
         <TouchableOpacity onPress={handleAddPhoto} style={styles.addButton}>
           <Plus size={20} color={colors.primary} />
+          <Text style={styles.addButtonText}>Add</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Search and Filter */}
+      {/* Search and Filters */}
       <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <Search size={16} color={colors.textTertiary} />
+        <View style={styles.searchBar}>
+          <Search size={20} color={colors.textTertiary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by tags, notes..."
+            placeholder="Search by tags or notes..."
             placeholderTextColor={colors.textTertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
         </View>
-        <TouchableOpacity 
-          style={styles.filterButton}
-          onPress={() => setShowFilterModal(true)}
+        
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          style={styles.filtersContainer}
+          contentContainerStyle={styles.filtersContent}
         >
-          <Filter size={16} color={colors.textSecondary} />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, filterPose === 'all' && styles.activeFilterChip]}
+            onPress={() => setFilterPose('all')}
+          >
+            <Text style={[styles.filterText, filterPose === 'all' && styles.activeFilterText]}>
+              All Poses
+            </Text>
+          </TouchableOpacity>
+          
+          {['front', 'side', 'back'].map((pose) => (
+            <TouchableOpacity
+              key={pose}
+              style={[styles.filterChip, filterPose === pose && styles.activeFilterChip]}
+              onPress={() => setFilterPose(pose)}
+            >
+              <Text style={[styles.filterText, filterPose === pose && styles.activeFilterText]}>
+                {pose.charAt(0).toUpperCase() + pose.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          
+          <TouchableOpacity
+            style={[styles.filterChip, filterTimeframe === 'week' && styles.activeFilterChip]}
+            onPress={() => setFilterTimeframe(filterTimeframe === 'week' ? 'all' : 'week')}
+          >
+            <Text style={[styles.filterText, filterTimeframe === 'week' && styles.activeFilterText]}>
+              This Week
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.filterChip, filterTimeframe === 'month' && styles.activeFilterChip]}
+            onPress={() => setFilterTimeframe(filterTimeframe === 'month' ? 'all' : 'month')}
+          >
+            <Text style={[styles.filterText, filterTimeframe === 'month' && styles.activeFilterText]}>
+              This Month
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
 
       {/* View Toggle */}
       <View style={styles.viewToggle}>
         <TouchableOpacity
           style={[styles.toggleButton, viewMode === 'grid' && styles.activeToggle]}
-          onPress={() => setViewMode('grid')}
+          onPress={() => {
+            setViewMode('grid');
+            setSelectedPhotos([]);
+          }}
         >
-          <Grid3X3 size={16} color={viewMode === 'grid' ? colors.surface : colors.textSecondary} />
+          <Grid3X3 size={20} color={viewMode === 'grid' ? colors.surface : colors.textSecondary} />
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.toggleButton, viewMode === 'list' && styles.activeToggle]}
-          onPress={() => setViewMode('list')}
+          onPress={() => {
+            setViewMode('list');
+            setSelectedPhotos([]);
+          }}
         >
-          <List size={16} color={viewMode === 'list' ? colors.surface : colors.textSecondary} />
+          <List size={20} color={viewMode === 'list' ? colors.surface : colors.textSecondary} />
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.toggleButton, viewMode === 'comparison' && styles.activeToggle]}
-          onPress={() => setViewMode('comparison')}
+          onPress={() => {
+            setViewMode('comparison');
+            setSelectedPhotos([]);
+          }}
         >
-          <TrendingUp size={16} color={viewMode === 'comparison' ? colors.surface : colors.textSecondary} />
+          <TrendingUp size={20} color={viewMode === 'comparison' ? colors.surface : colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -573,7 +584,7 @@ export default function ProgressPhotoScreen() {
         <View style={styles.modalContainer}>
           <View style={styles.modalHandle} />
           <Text style={styles.modalTitle}>Add Progress Photo</Text>
-          <Text style={styles.modalSubtitle}>Choose how to add your photo</Text>
+          <Text style={styles.modalSubtitle}>Document your fitness journey</Text>
           
           <View style={styles.modalButtons}>
             <TouchableOpacity style={styles.modalButton} onPress={handleTakePhoto}>
@@ -584,42 +595,6 @@ export default function ProgressPhotoScreen() {
               <ImageIcon size={24} color={colors.primary} />
               <Text style={styles.modalButtonText}>Choose from Gallery</Text>
             </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Filter Modal */}
-      <Modal
-        visible={showFilterModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowFilterModal(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHandle} />
-          <Text style={styles.modalTitle}>Filter Photos</Text>
-          
-          <View style={styles.filterOptions}>
-            {FILTER_OPTIONS.map((option) => (
-              <TouchableOpacity
-                key={option.id}
-                style={[
-                  styles.filterOption,
-                  selectedFilter === option.id && styles.selectedFilterOption
-                ]}
-                onPress={() => {
-                  setSelectedFilter(option.id);
-                  setShowFilterModal(false);
-                }}
-              >
-                <Text style={[
-                  styles.filterOptionText,
-                  selectedFilter === option.id && styles.selectedFilterOptionText
-                ]}>
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
           </View>
         </View>
       </Modal>
@@ -694,23 +669,47 @@ export default function ProgressPhotoScreen() {
             <View style={styles.formContainer}>
               {/* Pose Selection */}
               <View style={styles.formField}>
-                <Text style={styles.fieldLabel}>Pose</Text>
-                <View style={styles.poseOptions}>
-                  {POSE_OPTIONS.map((pose) => (
+                <Text style={styles.fieldLabel}>Pose Type</Text>
+                <View style={styles.poseSelector}>
+                  {['front', 'side', 'back', 'custom'].map((pose) => (
                     <TouchableOpacity
-                      key={pose.id}
+                      key={pose}
                       style={[
                         styles.poseOption,
-                        newPhoto.pose === pose.id && styles.selectedPoseOption
+                        newPhoto.pose === pose && styles.selectedPoseOption
                       ]}
-                      onPress={() => setNewPhoto(prev => ({ ...prev, pose: pose.id as any }))}
+                      onPress={() => setNewPhoto(prev => ({ ...prev, pose: pose as any }))}
                     >
-                      <Text style={styles.poseEmoji}>{pose.emoji}</Text>
                       <Text style={[
-                        styles.poseLabel,
-                        newPhoto.pose === pose.id && styles.selectedPoseLabel
+                        styles.poseOptionText,
+                        newPhoto.pose === pose && styles.selectedPoseOptionText
                       ]}>
-                        {pose.label}
+                        {pose.charAt(0).toUpperCase() + pose.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Mood Selection */}
+              <View style={styles.formField}>
+                <Text style={styles.fieldLabel}>How are you feeling?</Text>
+                <View style={styles.moodSelector}>
+                  {Object.entries(moodEmojis).map(([mood, emoji]) => (
+                    <TouchableOpacity
+                      key={mood}
+                      style={[
+                        styles.moodOption,
+                        newPhoto.mood === mood && styles.selectedMoodOption
+                      ]}
+                      onPress={() => setNewPhoto(prev => ({ ...prev, mood: mood as any }))}
+                    >
+                      <Text style={styles.moodEmoji}>{emoji}</Text>
+                      <Text style={[
+                        styles.moodText,
+                        newPhoto.mood === mood && styles.selectedMoodText
+                      ]}>
+                        {mood.charAt(0).toUpperCase() + mood.slice(1)}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -725,7 +724,7 @@ export default function ProgressPhotoScreen() {
                     style={styles.metricInput}
                     value={newPhoto.weight?.toString() || ''}
                     onChangeText={(text) => setNewPhoto(prev => ({ ...prev, weight: parseFloat(text) || undefined }))}
-                    placeholder="0.0"
+                    placeholder="--"
                     placeholderTextColor={colors.textTertiary}
                     keyboardType="numeric"
                   />
@@ -737,48 +736,37 @@ export default function ProgressPhotoScreen() {
                     style={styles.metricInput}
                     value={newPhoto.bodyFat?.toString() || ''}
                     onChangeText={(text) => setNewPhoto(prev => ({ ...prev, bodyFat: parseFloat(text) || undefined }))}
-                    placeholder="0.0"
+                    placeholder="--"
                     placeholderTextColor={colors.textTertiary}
                     keyboardType="numeric"
                   />
                 </View>
 
                 <View style={styles.metricField}>
-                  <Text style={styles.fieldLabel}>Muscle Mass (kg)</Text>
+                  <Text style={styles.fieldLabel}>Muscle (%)</Text>
                   <TextInput
                     style={styles.metricInput}
-                    value={newPhoto.muscleMass?.toString() || ''}
-                    onChangeText={(text) => setNewPhoto(prev => ({ ...prev, muscleMass: parseFloat(text) || undefined }))}
-                    placeholder="0.0"
+                    value={newPhoto.musclePercentage?.toString() || ''}
+                    onChangeText={(text) => setNewPhoto(prev => ({ ...prev, musclePercentage: parseFloat(text) || undefined }))}
+                    placeholder="--"
                     placeholderTextColor={colors.textTertiary}
                     keyboardType="numeric"
                   />
                 </View>
               </View>
 
-              {/* Date and Time */}
-              <View style={styles.dateTimeRow}>
-                <View style={styles.dateTimeField}>
-                  <Text style={styles.fieldLabel}>Date</Text>
-                  <TextInput
-                    style={styles.dateTimeInput}
-                    value={newPhoto.date || ''}
-                    onChangeText={(text) => setNewPhoto(prev => ({ ...prev, date: text }))}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={colors.textTertiary}
-                  />
-                </View>
-
-                <View style={styles.dateTimeField}>
-                  <Text style={styles.fieldLabel}>Time</Text>
-                  <TextInput
-                    style={styles.dateTimeInput}
-                    value={newPhoto.time || ''}
-                    onChangeText={(text) => setNewPhoto(prev => ({ ...prev, time: text }))}
-                    placeholder="HH:MM"
-                    placeholderTextColor={colors.textTertiary}
-                  />
-                </View>
+              {/* Notes */}
+              <View style={styles.formField}>
+                <Text style={styles.fieldLabel}>Notes</Text>
+                <TextInput
+                  style={styles.notesInput}
+                  value={newPhoto.notes || ''}
+                  onChangeText={(text) => setNewPhoto(prev => ({ ...prev, notes: text }))}
+                  placeholder="How are you feeling about your progress?"
+                  placeholderTextColor={colors.textTertiary}
+                  multiline
+                  numberOfLines={3}
+                />
               </View>
 
               {/* Tags */}
@@ -789,7 +777,7 @@ export default function ProgressPhotoScreen() {
                     style={styles.tagInput}
                     value={newTag}
                     onChangeText={setNewTag}
-                    placeholder="Add tag..."
+                    placeholder="Add a tag..."
                     placeholderTextColor={colors.textTertiary}
                     onSubmitEditing={handleAddTag}
                   />
@@ -813,20 +801,6 @@ export default function ProgressPhotoScreen() {
                   </View>
                 )}
               </View>
-
-              {/* Notes */}
-              <View style={styles.formField}>
-                <Text style={styles.fieldLabel}>Notes</Text>
-                <TextInput
-                  style={styles.notesInput}
-                  value={newPhoto.notes || ''}
-                  onChangeText={(text) => setNewPhoto(prev => ({ ...prev, notes: text }))}
-                  placeholder="Add notes about this photo..."
-                  placeholderTextColor={colors.textTertiary}
-                  multiline
-                  numberOfLines={3}
-                />
-              </View>
             </View>
           </ScrollView>
         </SafeAreaView>
@@ -844,9 +818,9 @@ export default function ProgressPhotoScreen() {
               <TouchableOpacity onPress={() => setSelectedPhoto(null)}>
                 <ArrowLeft size={24} color={colors.text} />
               </TouchableOpacity>
-              <Text style={styles.detailTitle}>Photo Details</Text>
+              <Text style={styles.detailTitle}>Progress Photo</Text>
               <TouchableOpacity>
-                <MoreHorizontal size={24} color={colors.text} />
+                <Share size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -863,14 +837,19 @@ export default function ProgressPhotoScreen() {
                       day: 'numeric'
                     })}
                   </Text>
-                  <Text style={styles.detailTime}>{selectedPhoto.time}</Text>
+                  {selectedPhoto.mood && (
+                    <View style={styles.detailMoodContainer}>
+                      <Text style={styles.detailMoodEmoji}>
+                        {moodEmojis[selectedPhoto.mood]}
+                      </Text>
+                      <Text style={styles.detailMoodText}>
+                        {selectedPhoto.mood.charAt(0).toUpperCase() + selectedPhoto.mood.slice(1)}
+                      </Text>
+                    </View>
+                  )}
                 </View>
                 
-                <View style={styles.detailPose}>
-                  <Text style={styles.detailPoseText}>{selectedPhoto.pose.toUpperCase()} VIEW</Text>
-                </View>
-
-                {(selectedPhoto.weight || selectedPhoto.bodyFat || selectedPhoto.muscleMass) && (
+                {(selectedPhoto.weight || selectedPhoto.bodyFat || selectedPhoto.musclePercentage) && (
                   <View style={styles.detailMetrics}>
                     {selectedPhoto.weight && (
                       <View style={styles.detailMetric}>
@@ -881,48 +860,165 @@ export default function ProgressPhotoScreen() {
                     {selectedPhoto.bodyFat && (
                       <View style={styles.detailMetric}>
                         <Percent size={16} color={colors.textSecondary} />
-                        <Text style={styles.detailMetricText}>{selectedPhoto.bodyFat}%</Text>
+                        <Text style={styles.detailMetricText}>{selectedPhoto.bodyFat}% body fat</Text>
                       </View>
                     )}
-                    {selectedPhoto.muscleMass && (
+                    {selectedPhoto.musclePercentage && (
                       <View style={styles.detailMetric}>
-                        <TrendingUp size={16} color={colors.textSecondary} />
-                        <Text style={styles.detailMetricText}>{selectedPhoto.muscleMass} kg muscle</Text>
+                        <Zap size={16} color={colors.textSecondary} />
+                        <Text style={styles.detailMetricText}>{selectedPhoto.musclePercentage}% muscle</Text>
                       </View>
                     )}
                   </View>
                 )}
 
-                {selectedPhoto.tags.length > 0 && (
+                {selectedPhoto.notes && (
+                  <View style={styles.detailNotesContainer}>
+                    <Text style={styles.detailNotesLabel}>Notes</Text>
+                    <Text style={styles.detailNotes}>{selectedPhoto.notes}</Text>
+                  </View>
+                )}
+
+                {selectedPhoto.tags && selectedPhoto.tags.length > 0 && (
                   <View style={styles.detailTags}>
                     {selectedPhoto.tags.map((tag, index) => (
                       <View key={index} style={styles.detailTag}>
-                        <Tag size={12} color={colors.primary} />
                         <Text style={styles.detailTagText}>{tag}</Text>
                       </View>
                     ))}
                   </View>
                 )}
-
-                {selectedPhoto.notes && (
-                  <View style={styles.detailNotes}>
-                    <Text style={styles.detailNotesTitle}>Notes</Text>
-                    <Text style={styles.detailNotesText}>{selectedPhoto.notes}</Text>
-                  </View>
-                )}
               </View>
             </ScrollView>
+          </SafeAreaView>
+        )}
+      </Modal>
 
-            <View style={styles.detailActions}>
-              <TouchableOpacity style={styles.detailActionButton}>
-                <Share size={20} color={colors.primary} />
-                <Text style={styles.detailActionText}>Share</Text>
+      {/* Comparison Modal */}
+      <Modal
+        visible={showComparison}
+        animationType="slide"
+        onRequestClose={() => {
+          setShowComparison(false);
+          setSelectedPhotos([]);
+          setComparisonData(null);
+        }}
+      >
+        {comparisonData && (
+          <SafeAreaView style={styles.comparisonModalContainer}>
+            <View style={styles.comparisonModalHeader}>
+              <TouchableOpacity onPress={() => {
+                setShowComparison(false);
+                setSelectedPhotos([]);
+                setComparisonData(null);
+              }}>
+                <ArrowLeft size={24} color={colors.text} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.detailActionButton}>
-                <Download size={20} color={colors.primary} />
-                <Text style={styles.detailActionText}>Download</Text>
+              <Text style={styles.comparisonModalTitle}>Progress Comparison</Text>
+              <TouchableOpacity>
+                <Share size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
+
+            <ScrollView style={styles.comparisonModalContent}>
+              {/* Progress Summary */}
+              <View style={styles.progressSummary}>
+                <Text style={styles.progressSummaryTitle}>
+                  {comparisonData.daysBetween} days of progress
+                </Text>
+                
+                <View style={styles.progressStats}>
+                  {comparisonData.weightChange !== 0 && (
+                    <View style={styles.progressStat}>
+                      <Text style={styles.progressStatLabel}>Weight Change</Text>
+                      <Text style={[
+                        styles.progressStatValue,
+                        { color: comparisonData.weightChange < 0 ? colors.success : colors.primary }
+                      ]}>
+                        {comparisonData.weightChange > 0 ? '+' : ''}{comparisonData.weightChange.toFixed(1)} kg
+                      </Text>
+                    </View>
+                  )}
+                  
+                  {comparisonData.bodyFatChange !== 0 && (
+                    <View style={styles.progressStat}>
+                      <Text style={styles.progressStatLabel}>Body Fat Change</Text>
+                      <Text style={[
+                        styles.progressStatValue,
+                        { color: comparisonData.bodyFatChange < 0 ? colors.success : colors.warning }
+                      ]}>
+                        {comparisonData.bodyFatChange > 0 ? '+' : ''}{comparisonData.bodyFatChange.toFixed(1)}%
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              {/* Photo Comparison */}
+              <View style={styles.photoComparison}>
+                <View style={styles.comparisonPhoto}>
+                  <Text style={styles.comparisonPhotoLabel}>Before</Text>
+                  <Image source={{ uri: comparisonData.photo1.imageUri }} style={styles.comparisonImage} />
+                  <Text style={styles.comparisonPhotoDate}>
+                    {new Date(comparisonData.photo1.date).toLocaleDateString()}
+                  </Text>
+                </View>
+                
+                <View style={styles.comparisonArrow}>
+                  <TrendingUp size={32} color={colors.primary} />
+                </View>
+                
+                <View style={styles.comparisonPhoto}>
+                  <Text style={styles.comparisonPhotoLabel}>After</Text>
+                  <Image source={{ uri: comparisonData.photo2.imageUri }} style={styles.comparisonImage} />
+                  <Text style={styles.comparisonPhotoDate}>
+                    {new Date(comparisonData.photo2.date).toLocaleDateString()}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Detailed Metrics */}
+              <View style={styles.detailedMetrics}>
+                <Text style={styles.detailedMetricsTitle}>Detailed Comparison</Text>
+                
+                <View style={styles.metricComparison}>
+                  <View style={styles.metricComparisonHeader}>
+                    <Text style={styles.metricComparisonLabel}>Metric</Text>
+                    <Text style={styles.metricComparisonLabel}>Before</Text>
+                    <Text style={styles.metricComparisonLabel}>After</Text>
+                    <Text style={styles.metricComparisonLabel}>Change</Text>
+                  </View>
+                  
+                  {comparisonData.photo1.weight && comparisonData.photo2.weight && (
+                    <View style={styles.metricComparisonRow}>
+                      <Text style={styles.metricComparisonCell}>Weight</Text>
+                      <Text style={styles.metricComparisonCell}>{comparisonData.photo1.weight} kg</Text>
+                      <Text style={styles.metricComparisonCell}>{comparisonData.photo2.weight} kg</Text>
+                      <Text style={[
+                        styles.metricComparisonCell,
+                        { color: comparisonData.weightChange < 0 ? colors.success : colors.primary }
+                      ]}>
+                        {comparisonData.weightChange > 0 ? '+' : ''}{comparisonData.weightChange.toFixed(1)} kg
+                      </Text>
+                    </View>
+                  )}
+                  
+                  {comparisonData.photo1.bodyFat && comparisonData.photo2.bodyFat && (
+                    <View style={styles.metricComparisonRow}>
+                      <Text style={styles.metricComparisonCell}>Body Fat</Text>
+                      <Text style={styles.metricComparisonCell}>{comparisonData.photo1.bodyFat}%</Text>
+                      <Text style={styles.metricComparisonCell}>{comparisonData.photo2.bodyFat}%</Text>
+                      <Text style={[
+                        styles.metricComparisonCell,
+                        { color: comparisonData.bodyFatChange < 0 ? colors.success : colors.warning }
+                      ]}>
+                        {comparisonData.bodyFatChange > 0 ? '+' : ''}{comparisonData.bodyFatChange.toFixed(1)}%
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            </ScrollView>
           </SafeAreaView>
         )}
       </Modal>
@@ -949,62 +1045,84 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   title: {
     fontFamily: 'Inter-Bold',
-    fontSize: 18,
+    fontSize: 20,
     color: colors.text,
     flex: 1,
     textAlign: 'center',
   },
   addButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.surfaceSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    gap: 12,
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
-  searchInputContainer: {
-    flex: 1,
+  addButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+    color: colors.primary,
+    marginLeft: 4,
+  },
+  searchContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surfaceSecondary,
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 12,
   },
   searchInput: {
     flex: 1,
     fontFamily: 'Inter-Regular',
-    fontSize: 14,
+    fontSize: 16,
     color: colors.text,
+    marginLeft: 12,
   },
-  filterButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.surfaceSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
+  filtersContainer: {
+    marginBottom: 8,
+  },
+  filtersContent: {
+    paddingRight: 20,
+  },
+  filterChip: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  activeFilterChip: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  activeFilterText: {
+    color: '#FFFFFF',
   },
   viewToggle: {
     flexDirection: 'row',
     margin: 20,
     backgroundColor: colors.surfaceSecondary,
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 4,
   },
   toggleButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 12,
     alignItems: 'center',
-    borderRadius: 6,
+    borderRadius: 8,
   },
   activeToggle: {
     backgroundColor: colors.primary,
@@ -1021,9 +1139,13 @@ const createStyles = (colors: any) => StyleSheet.create({
     width: (width - 48) / 3,
     height: (width - 48) / 3,
     margin: 4,
-    borderRadius: 8,
+    borderRadius: 12,
     overflow: 'hidden',
     position: 'relative',
+  },
+  selectedGridItem: {
+    borderWidth: 3,
+    borderColor: colors.primary,
   },
   gridImage: {
     width: '100%',
@@ -1035,40 +1157,33 @@ const createStyles = (colors: any) => StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    padding: 6,
+    padding: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   gridDate: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Inter-SemiBold',
     fontSize: 10,
     color: '#FFFFFF',
-    marginBottom: 2,
   },
-  gridPose: {
-    alignSelf: 'flex-start',
+  gridMood: {
+    fontSize: 12,
   },
-  gridPoseText: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 8,
-    color: '#FFFFFF',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 2,
-  },
-  selectedIndicator: {
+  selectionIndicator: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  selectedText: {
+  selectionNumber: {
     fontFamily: 'Inter-Bold',
-    fontSize: 10,
+    fontSize: 12,
     color: '#FFFFFF',
   },
   listContainer: {
@@ -1077,19 +1192,19 @@ const createStyles = (colors: any) => StyleSheet.create({
   listItem: {
     flexDirection: 'row',
     backgroundColor: colors.surface,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
-    marginBottom: 12,
+    marginBottom: 16,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
-    shadowRadius: 4,
+    shadowRadius: 8,
     elevation: 2,
   },
   listImage: {
     width: 80,
     height: 80,
-    borderRadius: 8,
+    borderRadius: 12,
     marginRight: 16,
   },
   listContent: {
@@ -1106,173 +1221,59 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     color: colors.text,
   },
-  listTime: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 12,
-    color: colors.textSecondary,
+  listMood: {
+    fontSize: 20,
   },
   listMetrics: {
     marginBottom: 8,
   },
   listMetric: {
     fontFamily: 'Inter-Regular',
-    fontSize: 12,
+    fontSize: 14,
     color: colors.textSecondary,
     marginBottom: 2,
   },
-  listActions: {
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginLeft: 12,
+  listNotes: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+    marginTop: 8,
   },
-  listActionButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.surfaceSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
+  moreTagsText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 12,
+    color: colors.textTertiary,
+    marginLeft: 8,
+  },
+  comparisonContainer: {
+    paddingHorizontal: 20,
+  },
+  comparisonInstructions: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 20,
   },
   tagContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 4,
+    marginTop: 8,
   },
   tag: {
     backgroundColor: colors.primary + '20',
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
+    marginRight: 8,
+    marginBottom: 4,
   },
   tagText: {
     fontFamily: 'Inter-Medium',
-    fontSize: 10,
-    color: colors.primary,
-  },
-  moreTagsText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 10,
-    color: colors.textTertiary,
-    alignSelf: 'center',
-  },
-  comparisonContainer: {
-    paddingHorizontal: 20,
-  },
-  comparisonHeader: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  comparisonTitle: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 20,
-    color: colors.text,
-    marginBottom: 4,
-  },
-  comparisonSubtitle: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  comparisonPhotos: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 24,
-  },
-  comparisonPhotoContainer: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  comparisonLabel: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
-    color: colors.text,
-    marginBottom: 8,
-  },
-  comparisonImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 12,
-  },
-  comparisonPlaceholder: {
-    width: '100%',
-    height: 200,
-    borderRadius: 12,
-    backgroundColor: colors.surfaceSecondary,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderText: {
-    fontFamily: 'Inter-Medium',
     fontSize: 12,
-    color: colors.textTertiary,
-    marginTop: 8,
-  },
-  progressStats: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 24,
-  },
-  progressTitle: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-    color: colors.text,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  progressGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  progressItem: {
-    alignItems: 'center',
-  },
-  progressValue: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 18,
     color: colors.primary,
-    marginBottom: 4,
-  },
-  progressLabel: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 12,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  comparisonActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  clearButton: {
-    flex: 1,
-    backgroundColor: colors.surfaceSecondary,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  clearButtonText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
-    color: colors.text,
-  },
-  shareButton: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-  shareButtonText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
-    color: '#FFFFFF',
   },
   modalContainer: {
     flex: 1,
@@ -1290,17 +1291,17 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   modalTitle: {
     fontFamily: 'Inter-Bold',
-    fontSize: 20,
+    fontSize: 24,
     color: colors.text,
     textAlign: 'center',
     marginBottom: 8,
   },
   modalSubtitle: {
     fontFamily: 'Inter-Regular',
-    fontSize: 14,
+    fontSize: 16,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 40,
   },
   modalButtons: {
     gap: 16,
@@ -1310,35 +1311,16 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surfaceSecondary,
-    borderRadius: 12,
-    paddingVertical: 16,
-    gap: 12,
+    borderRadius: 16,
+    paddingVertical: 20,
+    borderWidth: 2,
+    borderColor: colors.border,
   },
   modalButtonText: {
     fontFamily: 'Inter-SemiBold',
     fontSize: 16,
     color: colors.text,
-  },
-  filterOptions: {
-    gap: 8,
-  },
-  filterOption: {
-    backgroundColor: colors.surfaceSecondary,
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-  },
-  selectedFilterOption: {
-    backgroundColor: colors.primary,
-  },
-  filterOptionText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-    color: colors.text,
-  },
-  selectedFilterOptionText: {
-    color: '#FFFFFF',
+    marginLeft: 12,
   },
   cameraContainer: {
     flex: 1,
@@ -1378,17 +1360,19 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,
+    paddingHorizontal: 40,
   },
   permissionText: {
     fontFamily: 'Inter-Regular',
     fontSize: 16,
     color: colors.text,
     marginBottom: 20,
+    textAlign: 'center',
   },
   permissionButton: {
     backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingHorizontal: 20,
+    borderRadius: 12,
+    paddingHorizontal: 24,
     paddingVertical: 12,
   },
   permissionButtonText: {
@@ -1416,9 +1400,9 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   saveHeaderButton: {
     backgroundColor: colors.primary,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   saveHeaderButtonText: {
     fontFamily: 'Inter-SemiBold',
@@ -1429,7 +1413,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flex: 1,
   },
   photoPreview: {
-    height: 250,
+    height: 300,
   },
   previewImage: {
     width: '100%',
@@ -1439,93 +1423,112 @@ const createStyles = (colors: any) => StyleSheet.create({
     padding: 20,
   },
   formField: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   fieldLabel: {
     fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
+    fontSize: 16,
     color: colors.text,
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  poseOptions: {
+  poseSelector: {
     flexDirection: 'row',
     gap: 8,
   },
   poseOption: {
     flex: 1,
     backgroundColor: colors.surfaceSecondary,
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 12,
+    paddingVertical: 12,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: colors.border,
   },
   selectedPoseOption: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  poseOptionText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+    color: colors.text,
+  },
+  selectedPoseOptionText: {
+    color: '#FFFFFF',
+  },
+  moodSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  moodOption: {
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.border,
+    minWidth: '30%',
+  },
+  selectedMoodOption: {
     backgroundColor: colors.primary + '20',
     borderColor: colors.primary,
   },
-  poseEmoji: {
-    fontSize: 20,
+  moodEmoji: {
+    fontSize: 24,
     marginBottom: 4,
   },
-  poseLabel: {
+  moodText: {
     fontFamily: 'Inter-Medium',
-    fontSize: 10,
+    fontSize: 12,
     color: colors.textSecondary,
-    textAlign: 'center',
   },
-  selectedPoseLabel: {
+  selectedMoodText: {
     color: colors.primary,
   },
   metricsGrid: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   metricField: {
     flex: 1,
   },
   metricInput: {
     fontFamily: 'Inter-Regular',
-    fontSize: 14,
+    fontSize: 16,
     color: colors.text,
     backgroundColor: colors.surfaceSecondary,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     textAlign: 'center',
   },
-  dateTimeRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 20,
-  },
-  dateTimeField: {
-    flex: 1,
-  },
-  dateTimeInput: {
+  notesInput: {
     fontFamily: 'Inter-Regular',
-    fontSize: 14,
+    fontSize: 16,
     color: colors.text,
     backgroundColor: colors.surfaceSecondary,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderRadius: 12,
+    padding: 16,
+    minHeight: 80,
+    textAlignVertical: 'top',
   },
   tagInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surfaceSecondary,
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     marginBottom: 12,
   },
   tagInput: {
     flex: 1,
     fontFamily: 'Inter-Regular',
-    fontSize: 14,
+    fontSize: 16,
     color: colors.text,
-    paddingVertical: 10,
   },
   addTagButton: {
     width: 32,
@@ -1540,27 +1543,16 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.primary + '20',
     borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     marginRight: 8,
-    marginBottom: 4,
+    marginBottom: 8,
   },
   editableTagText: {
     fontFamily: 'Inter-Medium',
     fontSize: 12,
     color: colors.primary,
-    marginRight: 4,
-  },
-  notesInput: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    color: colors.text,
-    backgroundColor: colors.surfaceSecondary,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    minHeight: 80,
-    textAlignVertical: 'top',
+    marginRight: 6,
   },
   detailModalContainer: {
     flex: 1,
@@ -1594,30 +1586,29 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   detailDate: {
     fontFamily: 'Inter-Bold',
-    fontSize: 18,
+    fontSize: 20,
     color: colors.text,
   },
-  detailTime: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  detailPose: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.primary + '20',
-    borderRadius: 12,
+  detailMoodContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    marginBottom: 16,
   },
-  detailPoseText: {
-    fontFamily: 'Inter-Bold',
+  detailMoodEmoji: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  detailMoodText: {
+    fontFamily: 'Inter-SemiBold',
     fontSize: 12,
-    color: colors.primary,
+    color: colors.text,
   },
   detailMetrics: {
     flexDirection: 'row',
@@ -1629,74 +1620,187 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surfaceSecondary,
-    borderRadius: 8,
+    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   detailMetricText: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Inter-SemiBold',
     fontSize: 14,
     color: colors.text,
     marginLeft: 8,
   },
-  detailTags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  detailNotesContainer: {
     marginBottom: 16,
   },
-  detailTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary + '20',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    gap: 4,
-  },
-  detailTagText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 12,
-    color: colors.primary,
+  detailNotesLabel: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: colors.text,
+    marginBottom: 8,
   },
   detailNotes: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: colors.textSecondary,
+    lineHeight: 24,
     backgroundColor: colors.surfaceSecondary,
     borderRadius: 12,
     padding: 16,
   },
-  detailNotesTitle: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
-    color: colors.text,
+  detailTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  detailTag: {
+    backgroundColor: colors.primary + '20',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
     marginBottom: 8,
   },
-  detailNotesText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  detailActions: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    gap: 16,
-  },
-  detailActionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surfaceSecondary,
-    borderRadius: 12,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  detailActionText: {
+  detailTagText: {
     fontFamily: 'Inter-SemiBold',
     fontSize: 14,
     color: colors.primary,
+  },
+  comparisonModalContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  comparisonModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  comparisonModalTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 18,
+    color: colors.text,
+  },
+  comparisonModalContent: {
+    flex: 1,
+  },
+  progressSummary: {
+    backgroundColor: colors.surface,
+    margin: 20,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  progressSummaryTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 20,
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  progressStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  progressStat: {
+    alignItems: 'center',
+  },
+  progressStatLabel: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  progressStatValue: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 18,
+  },
+  photoComparison: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  comparisonPhoto: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  comparisonPhotoLabel: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: colors.text,
+    marginBottom: 8,
+  },
+  comparisonImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  comparisonPhotoDate: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  comparisonArrow: {
+    marginHorizontal: 16,
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: 20,
+    padding: 8,
+  },
+  detailedMetrics: {
+    backgroundColor: colors.surface,
+    margin: 20,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  detailedMetricsTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 18,
+    color: colors.text,
+    marginBottom: 16,
+  },
+  metricComparison: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  metricComparisonHeader: {
+    flexDirection: 'row',
+    backgroundColor: colors.surfaceSecondary,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  metricComparisonRow: {
+    flexDirection: 'row',
+    backgroundColor: colors.background,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  metricComparisonLabel: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+    color: colors.text,
+    flex: 1,
+    textAlign: 'center',
+  },
+  metricComparisonCell: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: colors.text,
+    flex: 1,
+    textAlign: 'center',
   },
 });
