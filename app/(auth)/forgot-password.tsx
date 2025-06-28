@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowLeft, Mail, Loader, CheckCircle } from 'lucide-react-native';
+import { ArrowLeft, Mail, Loader, CircleCheck as CheckCircle } from 'lucide-react-native';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
