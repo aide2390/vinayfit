@@ -9,21 +9,7 @@ import {
   Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
-  ArrowLeft, 
-  Footprints, 
-  Target, 
-  TrendingUp, 
-  Calendar,
-  Award,
-  Flame,
-  Clock,
-  MoreHorizontal,
-  ChevronLeft,
-  ChevronRight,
-  Sun,
-  Moon
-} from 'lucide-react-native';
+import { ArrowLeft, Footprints, Target, TrendingUp, Calendar, Award, Flame, Clock, MoveHorizontal as MoreHorizontal, ChevronLeft, ChevronRight, Sun, Moon } from 'lucide-react-native';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
