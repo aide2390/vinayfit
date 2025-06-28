@@ -8,7 +8,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { User, Settings, Clock, Droplets, TrendingUp, Calendar, Camera, ChartBar as BarChart3, Target, ChevronRight, Activity, LogOut } from 'lucide-react-native';
+import { User, Settings, Clock, Droplets, TrendingUp, Calendar, Camera, ChartBar as BarChart3, Target, ChevronRight, Activity, LogOut, Footprints } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 import { useUserRole } from '@/contexts/UserContext';
@@ -51,6 +51,13 @@ export default function ProfileView() {
       onPress: () => router.push('/activity-history'),
     },
     {
+      id: 'steps',
+      title: 'Steps',
+      icon: Footprints,
+      color: colors.success,
+      onPress: () => router.push('/step-tracker'),
+    },
+    {
       id: 'exercises',
       title: 'Your exercises',
       icon: Target,
@@ -63,13 +70,6 @@ export default function ProfileView() {
       icon: Camera,
       color: colors.warning,
       onPress: () => router.push('/progress-photo'),
-    },
-    {
-      id: 'steps',
-      title: 'Steps',
-      icon: TrendingUp,
-      color: colors.error,
-      onPress: () => {},
     },
     // Add fitness goals menu item for clients
     ...(userRole === 'client' ? [{
