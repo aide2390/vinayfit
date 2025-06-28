@@ -13,27 +13,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
-  ArrowLeft, 
-  Plus, 
-  X, 
-  Camera, 
-  Image as ImageIcon, 
-  Grid3x3 as Grid3X3, 
-  List, 
-  Calendar, 
-  Weight, 
-  Percent, 
-  MoreHorizontal,
-  TrendingUp,
-  Eye,
-  Download,
-  Share,
-  Filter,
-  Search,
-  ChevronDown,
-  Tag
-} from 'lucide-react-native';
+import { ArrowLeft, Plus, X, Camera, Image as ImageIcon, Grid3x3 as Grid3X3, List, Calendar, Weight, Percent, MoveHorizontal as MoreHorizontal, TrendingUp, Eye, Download, Share, Filter, Search, ChevronDown, Tag } from 'lucide-react-native';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
