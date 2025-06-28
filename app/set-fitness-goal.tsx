@@ -9,6 +9,7 @@ import {
   Modal,
   Platform,
   Alert,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -64,6 +65,61 @@ const emojiOptions = [
   '🎯', '🏆', '💪', '🔥', '⚡', '🌟', '🚀', '💎', '👑', '🎉',
   '🏃‍♂️', '🏋️‍♂️', '🧘‍♀️', '🏊‍♂️', '🚴‍♂️', '⚖️', '📈', '📊', '⏰', '🎪'
 ];
+
+// Enhanced Toggle Component
+const AnimatedToggle = ({ value, onValueChange, disabled = false }: {
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+  disabled?: boolean;
+}) => {
+  const colors = getColors(useColorScheme());
+  const [animatedValue] = useState(new Animated.Value(value ? 1 : 0));
+
+  useEffect(() => {
+    Animated.timing(animatedValue, {
+      toValue: value ? 1 : 0,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  }, [value]);
+
+  const handlePress = () => {
+    if (!disabled) {
+      onValueChange(!value);
+    }
+  };
+
+  const translateX = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [2, 22],
+  });
+
+  const backgroundColor = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [colors.borderLight, colors.primary],
+  });
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.toggle,
+        disabled && styles.toggleDisabled
+      ]}
+      onPress={handlePress}
+      disabled={disabled}
+      activeOpacity={0.7}
+    >
+      <Animated.View style={[styles.toggleTrack, { backgroundColor }]}>
+        <Animated.View 
+          style={[
+            styles.toggleThumb, 
+            { transform: [{ translateX }] }
+          ]} 
+        />
+      </Animated.View>
+    </TouchableOpacity>
+  );
+};
 
 export default function SetFitnessGoalScreen() {
   const colorScheme = useColorScheme();
@@ -426,12 +482,10 @@ export default function SetFitnessGoalScreen() {
           
           <View style={styles.reminderOption}>
             <Text style={styles.reminderText}>When the countdown finishes</Text>
-            <TouchableOpacity
-              style={[styles.toggle, reminders.onFinish && styles.toggleActive]}
-              onPress={() => setReminders(prev => ({ ...prev, onFinish: !prev.onFinish }))}
-            >
-              <View style={[styles.toggleThumb, reminders.onFinish && styles.toggleThumbActive]} />
-            </TouchableOpacity>
+            <AnimatedToggle
+              value={reminders.onFinish}
+              onValueChange={(value) => setReminders(prev => ({ ...prev, onFinish: value }))}
+            />
           </View>
 
           <View style={styles.reminderOption}>
@@ -439,12 +493,10 @@ export default function SetFitnessGoalScreen() {
               <Text style={styles.reminderText}>1 day before</Text>
               <Text style={styles.reminderSubtext}>at 9AM</Text>
             </View>
-            <TouchableOpacity
-              style={[styles.toggle, reminders.oneDayBefore && styles.toggleActive]}
-              onPress={() => setReminders(prev => ({ ...prev, oneDayBefore: !prev.oneDayBefore }))}
-            >
-              <View style={[styles.toggleThumb, reminders.oneDayBefore && styles.toggleThumbActive]} />
-            </TouchableOpacity>
+            <AnimatedToggle
+              value={reminders.oneDayBefore}
+              onValueChange={(value) => setReminders(prev => ({ ...prev, oneDayBefore: value }))}
+            />
           </View>
 
           <View style={styles.reminderOption}>
@@ -452,43 +504,43 @@ export default function SetFitnessGoalScreen() {
               <Text style={styles.reminderText}>1 week before</Text>
               <Text style={styles.reminderSubtext}>at 9AM</Text>
             </View>
-            <TouchableOpacity
-              style={[styles.toggle, reminders.oneWeekBefore && styles.toggleActive]}
-              onPress={() => setReminders(prev => ({ ...prev, oneWeekBefore: !prev.oneWeekBefore }))}
-            >
-              <View style={[styles.toggleThumb, reminders.oneWeekBefore && styles.toggleThumbActive]} />
-            </TouchableOpacity>
+            <AnimatedToggle
+              value={reminders.oneWeekBefore}
+              onValueChange={(value) => setReminders(prev => ({ ...prev, oneWeekBefore: value }))}
+            />
           </View>
         </View>
 
         {/* Other Options */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Other</Text>
+          <Text style={styles.sectionTitle}>Other Options</Text>
           
           <View style={styles.reminderOption}>
             <View style={styles.optionWithIcon}>
               <Pin size={16} color={colors.primary} />
-              <Text style={styles.reminderText}>Pin on Today Screen</Text>
+              <View>
+                <Text style={styles.reminderText}>Pin on Today Screen</Text>
+                <Text style={styles.reminderSubtext}>Show this goal on your main dashboard</Text>
+              </View>
             </View>
-            <TouchableOpacity
-              style={[styles.toggle, pinToToday && styles.toggleActive]}
-              onPress={() => setPinToToday(!pinToToday)}
-            >
-              <View style={[styles.toggleThumb, pinToToday && styles.toggleThumbActive]} />
-            </TouchableOpacity>
+            <AnimatedToggle
+              value={pinToToday}
+              onValueChange={setPinToToday}
+            />
           </View>
 
           <View style={styles.reminderOption}>
             <View style={styles.optionWithIcon}>
               <Share2 size={16} color={colors.primary} />
-              <Text style={styles.reminderText}>Share with your coach</Text>
+              <View>
+                <Text style={styles.reminderText}>Share with your coach</Text>
+                <Text style={styles.reminderSubtext}>Allow your trainer to see this goal</Text>
+              </View>
             </View>
-            <TouchableOpacity
-              style={[styles.toggle, shareWithCoach && styles.toggleActive]}
-              onPress={() => setShareWithCoach(!shareWithCoach)}
-            >
-              <View style={[styles.toggleThumb, shareWithCoach && styles.toggleThumbActive]} />
-            </TouchableOpacity>
+            <AnimatedToggle
+              value={shareWithCoach}
+              onValueChange={setShareWithCoach}
+            />
           </View>
         </View>
 
@@ -730,7 +782,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
   },
@@ -747,33 +799,36 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   optionWithIcon: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    alignItems: 'flex-start',
+    gap: 12,
+    flex: 1,
   },
   toggle: {
     width: 50,
     height: 30,
-    backgroundColor: colors.borderLight,
+    justifyContent: 'center',
+  },
+  toggleDisabled: {
+    opacity: 0.5,
+  },
+  toggleTrack: {
+    width: 50,
+    height: 30,
     borderRadius: 15,
     justifyContent: 'center',
-    paddingHorizontal: 2,
-  },
-  toggleActive: {
-    backgroundColor: colors.primary,
+    position: 'relative',
   },
   toggleThumb: {
     width: 26,
     height: 26,
     backgroundColor: '#FFFFFF',
     borderRadius: 13,
-    shadowColor: colors.shadow,
+    position: 'absolute',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 2,
-  },
-  toggleThumbActive: {
-    transform: [{ translateX: 20 }],
   },
   modalContainer: {
     flex: 1,
