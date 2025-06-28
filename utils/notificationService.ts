@@ -50,9 +50,7 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
     }
 
     // Get the token that uniquely identifies this device
-    const token = await Notifications.getExpoPushTokenAsync({
-      projectId: 'your-project-id', // Replace with your actual project ID
-    });
+    const token = await Notifications.getExpoPushTokenAsync();
     console.log('Push token:', token.data);
 
     return true;
