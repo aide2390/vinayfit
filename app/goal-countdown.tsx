@@ -10,9 +10,11 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Target, Calendar, Clock, TrendingUp, Share2, CreditCard as Edit3, Trash2, CircleCheck as CheckCircle, Circle, Trophy, Flame, Zap } from 'lucide-react-native';
+import { ArrowLeft, Target, Calendar, Clock, TrendingUp, Share2, CreditCard as Edit3, Trash2, CircleCheck as CheckCircle, Circle, Trophy, Flame, Zap, Bell, BellOff } from 'lucide-react-native';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 import { router, useLocalSearchParams } from 'expo-router';
+import { cancelGoalNotifications, getAllScheduledNotifications } from '@/utils/notificationService';
+import { Platform } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -79,6 +81,7 @@ export default function GoalCountdownScreen() {
     minutes: 0,
     seconds: 0,
   });
+  const [hasActiveNotifications, setHasActiveNotifications] = useState(false);
 
   useEffect(() => {
     const updateCountdown = () => {
@@ -103,6 +106,28 @@ export default function GoalCountdownScreen() {
 
     return () => clearInterval(interval);
   }, [goal.targetDate]);
+
+  useEffect(() => {
+    checkNotificationStatus();
+  }, [goal.id]);
+
+  const checkNotificationStatus = async () => {
+    if (Platform.OS === 'web') {
+      setHasActiveNotifications(false);
+      return;
+    }
+
+    try {
+      const scheduledNotifications = await getAllScheduledNotifications();
+      const goalNotifications = scheduledNotifications.filter(
+        notification => notification.content.data?.goalId === goal.id
+      );
+      setHasActiveNotifications(goalNotifications.length > 0);
+    } catch (error) {
+      console.error('Error checking notification status:', error);
+      setHasActiveNotifications(false);
+    }
+  };
 
   const getProgressPercentage = () => {
     if (!goal.targetValue || !goal.currentValue) return 0;
@@ -133,8 +158,20 @@ export default function GoalCountdownScreen() {
         {
           text: 'Complete',
           style: 'default',
-          onPress: () => {
+          onPress: async () => {
             setGoal(prev => ({ ...prev, completed: true }));
+            
+            // Cancel notifications when goal is completed
+            if (Platform.OS !== 'web') {
+              try {
+                await cancelGoalNotifications(goal.id);
+                setHasActiveNotifications(false);
+                console.log('Cancelled notifications for completed goal');
+              } catch (error) {
+                console.error('Error cancelling notifications:', error);
+              }
+            }
+            
             // Save to storage
           }
         }
@@ -151,13 +188,63 @@ export default function GoalCountdownScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
+            // Cancel notifications before deleting
+            if (Platform.OS !== 'web') {
+              try {
+                await cancelGoalNotifications(goal.id);
+                console.log('Cancelled notifications for deleted goal');
+              } catch (error) {
+                console.error('Error cancelling notifications:', error);
+              }
+            }
+            
             // Delete from storage
             router.back();
           }
         }
       ]
     );
+  };
+
+  const handleToggleNotifications = async () => {
+    if (Platform.OS === 'web') {
+      Alert.alert('Not Available', 'Push notifications are not available on web platform.');
+      return;
+    }
+
+    if (hasActiveNotifications) {
+      Alert.alert(
+        'Disable Notifications',
+        'Are you sure you want to disable all notifications for this goal?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Disable',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await cancelGoalNotifications(goal.id);
+                setHasActiveNotifications(false);
+                Alert.alert('Success', 'Notifications have been disabled for this goal.');
+              } catch (error) {
+                console.error('Error cancelling notifications:', error);
+                Alert.alert('Error', 'Failed to disable notifications.');
+              }
+            }
+          }
+        ]
+      );
+    } else {
+      Alert.alert(
+        'Enable Notifications',
+        'To enable notifications, please edit this goal and configure your reminder preferences.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Edit Goal', onPress: () => router.push('/set-fitness-goal') }
+        ]
+      );
+    }
   };
 
   const handleShareGoal = () => {
@@ -206,6 +293,13 @@ export default function GoalCountdownScreen() {
         </TouchableOpacity>
         <Text style={styles.title}>Goal Countdown</Text>
         <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.headerButton} onPress={handleToggleNotifications}>
+            {hasActiveNotifications ? (
+              <Bell size={20} color={colors.primary} />
+            ) : (
+              <BellOff size={20} color={colors.textSecondary} />
+            )}
+          </TouchableOpacity>
           <TouchableOpacity style={styles.headerButton} onPress={handleShareGoal}>
             <Share2 size={20} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -228,6 +322,25 @@ export default function GoalCountdownScreen() {
             <Text style={styles.goalTitle}>{goal.title}</Text>
             <Text style={styles.goalDescription}>{goal.description}</Text>
             <Text style={styles.targetDate}>Target: {formatDate(goal.targetDate)}</Text>
+            
+            {/* Notification Status */}
+            {Platform.OS !== 'web' && (
+              <View style={styles.notificationStatus}>
+                {hasActiveNotifications ? (
+                  <View style={styles.notificationBadge}>
+                    <Bell size={12} color={colors.success} />
+                    <Text style={styles.notificationText}>Reminders Active</Text>
+                  </View>
+                ) : (
+                  <View style={[styles.notificationBadge, styles.notificationBadgeInactive]}>
+                    <BellOff size={12} color={colors.textSecondary} />
+                    <Text style={[styles.notificationText, styles.notificationTextInactive]}>
+                      No Reminders
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
           </View>
         </LinearGradient>
 
@@ -424,6 +537,30 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: 12,
+  },
+  notificationStatus: {
+    marginTop: 8,
+  },
+  notificationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    gap: 4,
+  },
+  notificationBadgeInactive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  notificationText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 10,
+    color: '#FFFFFF',
+  },
+  notificationTextInactive: {
+    color: 'rgba(255, 255, 255, 0.6)',
   },
   countdownContainer: {
     backgroundColor: colors.surface,

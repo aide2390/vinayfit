@@ -27,6 +27,7 @@ import {
 } from 'lucide-react-native';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
+import { scheduleGoalNotifications } from '@/utils/notificationService';
 
 interface FitnessGoal {
   id: string;
@@ -83,6 +84,7 @@ export default function SetFitnessGoalScreen() {
   });
   const [pinToToday, setPinToToday] = useState(false);
   const [shareWithCoach, setShareWithCoach] = useState(true);
+  const [isSchedulingNotifications, setIsSchedulingNotifications] = useState(false);
 
   // Modal states
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
@@ -120,30 +122,65 @@ export default function SetFitnessGoalScreen() {
       return;
     }
 
-    const newGoal: FitnessGoal = {
-      id: Date.now().toString(),
-      title: goalTitle.trim(),
-      description: goalDescription.trim(),
-      category: selectedCategory.id,
-      targetDate: targetDate.toISOString(),
-      targetValue: targetValue ? parseFloat(targetValue) : undefined,
-      currentValue: currentValue ? parseFloat(currentValue) : undefined,
-      unit: selectedCategory.unit,
-      emoji: selectedEmoji,
-      reminders,
-      pinToToday,
-      shareWithCoach,
-      createdAt: new Date().toISOString(),
-    };
+    setIsSchedulingNotifications(true);
 
-    // Save goal to storage (implement your storage logic here)
-    console.log('Saving goal:', newGoal);
+    try {
+      const newGoal: FitnessGoal = {
+        id: Date.now().toString(),
+        title: goalTitle.trim(),
+        description: goalDescription.trim(),
+        category: selectedCategory.id,
+        targetDate: targetDate.toISOString(),
+        targetValue: targetValue ? parseFloat(targetValue) : undefined,
+        currentValue: currentValue ? parseFloat(currentValue) : undefined,
+        unit: selectedCategory.unit,
+        emoji: selectedEmoji,
+        reminders,
+        pinToToday,
+        shareWithCoach,
+        createdAt: new Date().toISOString(),
+      };
 
-    Alert.alert(
-      'Goal Created!',
-      'Your fitness goal has been created successfully.',
-      [{ text: 'OK', onPress: () => router.back() }]
-    );
+      // Save goal to storage (implement your storage logic here)
+      console.log('Saving goal:', newGoal);
+
+      // Schedule notifications if any reminders are enabled
+      const hasReminders = reminders.onFinish || reminders.oneDayBefore || reminders.oneWeekBefore;
+      
+      if (hasReminders && Platform.OS !== 'web') {
+        try {
+          await scheduleGoalNotifications(
+            newGoal.id,
+            newGoal.title,
+            newGoal.emoji,
+            new Date(newGoal.targetDate),
+            reminders
+          );
+          
+          console.log('Notifications scheduled successfully');
+        } catch (error) {
+          console.error('Error scheduling notifications:', error);
+          Alert.alert(
+            'Goal Created',
+            'Your goal was created but notifications could not be scheduled. You can enable them later in settings.',
+            [{ text: 'OK' }]
+          );
+        }
+      }
+
+      Alert.alert(
+        'Goal Created! 🎉',
+        hasReminders && Platform.OS !== 'web' 
+          ? 'Your fitness goal has been created and reminders have been scheduled.'
+          : 'Your fitness goal has been created successfully.',
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    } catch (error) {
+      console.error('Error creating goal:', error);
+      Alert.alert('Error', 'Failed to create goal. Please try again.');
+    } finally {
+      setIsSchedulingNotifications(false);
+    }
   };
 
   const renderDatePicker = () => {
@@ -251,12 +288,18 @@ export default function SetFitnessGoalScreen() {
         </TouchableOpacity>
         <Text style={styles.title}>Set Fitness Goal</Text>
         <TouchableOpacity
-          style={[styles.saveButton, !goalTitle.trim() && styles.saveButtonDisabled]}
+          style={[
+            styles.saveButton, 
+            (!goalTitle.trim() || isSchedulingNotifications) && styles.saveButtonDisabled
+          ]}
           onPress={handleSaveGoal}
-          disabled={!goalTitle.trim()}
+          disabled={!goalTitle.trim() || isSchedulingNotifications}
         >
-          <Text style={[styles.saveButtonText, !goalTitle.trim() && styles.saveButtonTextDisabled]}>
-            Create
+          <Text style={[
+            styles.saveButtonText, 
+            (!goalTitle.trim() || isSchedulingNotifications) && styles.saveButtonTextDisabled
+          ]}>
+            {isSchedulingNotifications ? 'Creating...' : 'Create'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -370,7 +413,16 @@ export default function SetFitnessGoalScreen() {
 
         {/* Reminders */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Remind Me</Text>
+          <View style={styles.reminderHeader}>
+            <Text style={styles.sectionTitle}>Remind Me</Text>
+            <Bell size={20} color={colors.primary} />
+          </View>
+          
+          {Platform.OS === 'web' && (
+            <Text style={styles.webNoticeText}>
+              Push notifications are not available on web. Reminders will work on mobile devices.
+            </Text>
+          )}
           
           <View style={styles.reminderOption}>
             <Text style={styles.reminderText}>When the countdown finishes</Text>
@@ -414,7 +466,10 @@ export default function SetFitnessGoalScreen() {
           <Text style={styles.sectionTitle}>Other</Text>
           
           <View style={styles.reminderOption}>
-            <Text style={styles.reminderText}>Pin on Today Screen</Text>
+            <View style={styles.optionWithIcon}>
+              <Pin size={16} color={colors.primary} />
+              <Text style={styles.reminderText}>Pin on Today Screen</Text>
+            </View>
             <TouchableOpacity
               style={[styles.toggle, pinToToday && styles.toggleActive]}
               onPress={() => setPinToToday(!pinToToday)}
@@ -424,7 +479,10 @@ export default function SetFitnessGoalScreen() {
           </View>
 
           <View style={styles.reminderOption}>
-            <Text style={styles.reminderText}>Share with your coach</Text>
+            <View style={styles.optionWithIcon}>
+              <Share2 size={16} color={colors.primary} />
+              <Text style={styles.reminderText}>Share with your coach</Text>
+            </View>
             <TouchableOpacity
               style={[styles.toggle, shareWithCoach && styles.toggleActive]}
               onPress={() => setShareWithCoach(!shareWithCoach)}
@@ -652,6 +710,22 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
   },
+  reminderHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  webNoticeText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: colors.warning,
+    backgroundColor: `${colors.warning}15`,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    lineHeight: 16,
+  },
   reminderOption: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -670,6 +744,11 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     marginTop: 2,
+  },
+  optionWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   toggle: {
     width: 50,
