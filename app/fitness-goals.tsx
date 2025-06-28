@@ -8,18 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
-  ArrowLeft, 
-  Plus, 
-  Target, 
-  Calendar,
-  TrendingUp,
-  Clock,
-  CheckCircle,
-  Circle,
-  Filter,
-  Search
-} from 'lucide-react-native';
+import { ArrowLeft, Plus, Target, Calendar, TrendingUp, Clock, CircleCheck as CheckCircle, Circle, Filter, Search } from 'lucide-react-native';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
 
