@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -23,7 +24,9 @@ import {
   MapPin,
   TrendingUp,
   Calendar as CalendarIcon,
-  Filter
+  Filter,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react-native';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
@@ -37,6 +40,7 @@ interface CalendarDay {
   isToday: boolean;
   isSelected: boolean;
   fullDate: string;
+  isCurrentMonth: boolean;
 }
 
 interface ActivityEntry {
@@ -58,8 +62,9 @@ interface ActivityEntry {
   color: string;
 }
 
-// Sample activity data with more comprehensive entries
+// Extended sample activity data across multiple weeks/months
 const activityHistory: ActivityEntry[] = [
+  // January 2025 - Week 1
   {
     id: '1',
     date: '2025-01-03',
@@ -103,6 +108,7 @@ const activityHistory: ActivityEntry[] = [
     color: '#06B6D4',
     notes: 'Amazing underwater experience, reached 15m depth'
   },
+  // January 2025 - Previous days
   {
     id: '4',
     date: '2025-01-02',
@@ -120,19 +126,6 @@ const activityHistory: ActivityEntry[] = [
   },
   {
     id: '5',
-    date: '2025-01-02',
-    name: 'Cycling',
-    duration: '1 hr 30 min',
-    timeRange: '8:00 AM - 9:30 AM',
-    calories: 450,
-    distance: 25.3,
-    heartRate: 145,
-    type: 'cardio',
-    icon: Bike,
-    color: '#8B5CF6'
-  },
-  {
-    id: '6',
     date: '2025-01-01',
     name: 'Yoga Flow',
     duration: '45 min',
@@ -146,8 +139,9 @@ const activityHistory: ActivityEntry[] = [
       emoji: '🧘‍♀️'
     }
   },
+  // December 2024
   {
-    id: '7',
+    id: '6',
     date: '2024-12-31',
     name: 'HIIT Workout',
     duration: '30 min',
@@ -160,7 +154,7 @@ const activityHistory: ActivityEntry[] = [
     notes: 'Intense session, pushed my limits'
   },
   {
-    id: '8',
+    id: '7',
     date: '2024-12-30',
     name: 'Swimming',
     duration: '1 hr',
@@ -170,6 +164,44 @@ const activityHistory: ActivityEntry[] = [
     type: 'cardio',
     icon: Waves,
     color: '#06B6D4'
+  },
+  {
+    id: '8',
+    date: '2024-12-28',
+    name: 'Cycling',
+    duration: '1 hr 30 min',
+    timeRange: '8:00 AM - 9:30 AM',
+    calories: 450,
+    distance: 25.3,
+    heartRate: 145,
+    type: 'cardio',
+    icon: Bike,
+    color: '#8B5CF6'
+  },
+  // January 2025 - Week 2 (future dates for demo)
+  {
+    id: '9',
+    date: '2025-01-10',
+    name: 'Morning Run',
+    duration: '35 min',
+    timeRange: '6:30 AM - 7:05 AM',
+    calories: 320,
+    distance: 5.5,
+    heartRate: 155,
+    type: 'cardio',
+    icon: Footprints,
+    color: '#3B82F6'
+  },
+  {
+    id: '10',
+    date: '2025-01-12',
+    name: 'Weight Training',
+    duration: '1 hr',
+    timeRange: '5:00 PM - 6:00 PM',
+    calories: 300,
+    type: 'strength',
+    icon: Dumbbell,
+    color: '#DC2626'
   }
 ];
 
@@ -179,40 +211,104 @@ export default function ActivityHistoryScreen() {
   const styles = createStyles(colors);
 
   const [selectedDate, setSelectedDate] = useState(3);
-  const [currentWeek, setCurrentWeek] = useState(0);
+  const [currentWeekStart, setCurrentWeekStart] = useState(new Date(2025, 0, 2)); // January 2, 2025 (Thursday)
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'cardio' | 'strength' | 'flexibility' | 'sports'>('all');
   const [showStats, setShowStats] = useState(false);
+  const [slideAnimation] = useState(new Animated.Value(0));
+
+  // Get the start of the week (Monday)
+  const getWeekStart = (date: Date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+    return new Date(d.setDate(diff));
+  };
 
   // Generate calendar days for the current week
   const generateCalendarDays = (): CalendarDay[] => {
     const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-    const dates = [2, 3, 4, 5, 6, 7, 8];
-    const fullDates = [
-      '2025-01-02', '2025-01-03', '2025-01-04', 
-      '2025-01-05', '2025-01-06', '2025-01-07', '2025-01-08'
-    ];
+    const weekStart = getWeekStart(currentWeekStart);
+    const calendarDays: CalendarDay[] = [];
+    const today = new Date();
     
     // Get dates with activities
-    const activeDates = [...new Set(activityHistory.map(activity => {
-      const activityDate = new Date(activity.date);
-      return activityDate.getDate();
-    }))];
+    const activeDates = [...new Set(activityHistory.map(activity => activity.date))];
     
-    return dates.map((date, index) => ({
-      date,
-      dayOfWeek: days[index],
-      hasActivity: activeDates.includes(date),
-      isToday: date === 3,
-      isSelected: date === selectedDate,
-      fullDate: fullDates[index],
-    }));
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + i);
+      
+      const dateString = date.toISOString().split('T')[0];
+      const isToday = date.toDateString() === today.toDateString();
+      
+      calendarDays.push({
+        date: date.getDate(),
+        dayOfWeek: days[i],
+        hasActivity: activeDates.includes(dateString),
+        isToday,
+        isSelected: date.getDate() === selectedDate && 
+                   date.getMonth() === currentWeekStart.getMonth() && 
+                   date.getFullYear() === currentWeekStart.getFullYear(),
+        fullDate: dateString,
+        isCurrentMonth: date.getMonth() === currentWeekStart.getMonth(),
+      });
+    }
+    
+    return calendarDays;
   };
 
   const calendarDays = generateCalendarDays();
 
+  // Navigate to previous week
+  const goToPreviousWeek = () => {
+    const newWeekStart = new Date(currentWeekStart);
+    newWeekStart.setDate(currentWeekStart.getDate() - 7);
+    
+    Animated.timing(slideAnimation, {
+      toValue: -1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setCurrentWeekStart(newWeekStart);
+      slideAnimation.setValue(1);
+      Animated.timing(slideAnimation, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
+
+  // Navigate to next week
+  const goToNextWeek = () => {
+    const newWeekStart = new Date(currentWeekStart);
+    newWeekStart.setDate(currentWeekStart.getDate() + 7);
+    
+    Animated.timing(slideAnimation, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setCurrentWeekStart(newWeekStart);
+      slideAnimation.setValue(-1);
+      Animated.timing(slideAnimation, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
+
+  // Go to current week
+  const goToCurrentWeek = () => {
+    const today = new Date();
+    setCurrentWeekStart(today);
+    setSelectedDate(today.getDate());
+  };
+
   // Filter activities based on selected date and filter
   const getFilteredActivities = () => {
-    const selectedFullDate = calendarDays.find(day => day.date === selectedDate)?.fullDate;
+    const selectedFullDate = calendarDays.find(day => day.isSelected)?.fullDate;
     
     let filtered = activityHistory;
     
@@ -248,12 +344,15 @@ export default function ActivityHistoryScreen() {
     return grouped;
   };
 
-  // Calculate weekly stats
+  // Calculate weekly stats for current week
   const getWeeklyStats = () => {
+    const weekStart = getWeekStart(currentWeekStart);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+
     const weekActivities = activityHistory.filter(activity => {
       const activityDate = new Date(activity.date);
-      const weekStart = new Date('2025-01-02');
-      const weekEnd = new Date('2025-01-08');
       return activityDate >= weekStart && activityDate <= weekEnd;
     });
 
@@ -274,8 +373,13 @@ export default function ActivityHistoryScreen() {
     };
   };
 
-  const handleDateSelect = (date: number) => {
-    setSelectedDate(date);
+  const handleDateSelect = (day: CalendarDay) => {
+    setSelectedDate(day.date);
+    // If selecting a date from a different month, navigate to that week
+    if (!day.isCurrentMonth) {
+      const newDate = new Date(day.fullDate);
+      setCurrentWeekStart(newDate);
+    }
   };
 
   const formatDateHeader = (dateString: string) => {
@@ -287,31 +391,62 @@ export default function ActivityHistoryScreen() {
     }).toUpperCase();
   };
 
+  const formatWeekRange = () => {
+    const weekStart = getWeekStart(currentWeekStart);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    
+    const startMonth = weekStart.toLocaleDateString('en-US', { month: 'short' });
+    const endMonth = weekEnd.toLocaleDateString('en-US', { month: 'short' });
+    const year = weekStart.getFullYear();
+    
+    if (startMonth === endMonth) {
+      return `${startMonth} ${weekStart.getDate()}-${weekEnd.getDate()}, ${year}`;
+    } else {
+      return `${startMonth} ${weekStart.getDate()} - ${endMonth} ${weekEnd.getDate()}, ${year}`;
+    }
+  };
+
+  const isCurrentWeek = () => {
+    const today = new Date();
+    const weekStart = getWeekStart(currentWeekStart);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    
+    return today >= weekStart && today <= weekEnd;
+  };
+
   const renderCalendarDay = (day: CalendarDay) => (
     <TouchableOpacity
-      key={day.date}
+      key={`${day.fullDate}-${day.dayOfWeek}`}
       style={[
         styles.calendarDay,
         day.isSelected && styles.selectedDay,
-        day.isToday && !day.isSelected && styles.todayDay
+        day.isToday && !day.isSelected && styles.todayDay,
+        !day.isCurrentMonth && styles.otherMonthDay
       ]}
-      onPress={() => handleDateSelect(day.date)}
+      onPress={() => handleDateSelect(day)}
     >
       <Text style={[
         styles.dayOfWeek,
-        day.isSelected && styles.selectedDayText
+        day.isSelected && styles.selectedDayText,
+        !day.isCurrentMonth && styles.otherMonthText
       ]}>
         {day.dayOfWeek}
       </Text>
       <Text style={[
         styles.dayDate,
         day.isSelected && styles.selectedDayText,
-        day.isToday && !day.isSelected && styles.todayText
+        day.isToday && !day.isSelected && styles.todayText,
+        !day.isCurrentMonth && styles.otherMonthText
       ]}>
         {day.date}
       </Text>
       {day.hasActivity && !day.isSelected && (
-        <View style={styles.activityDot} />
+        <View style={[
+          styles.activityDot,
+          !day.isCurrentMonth && styles.otherMonthDot
+        ]} />
       )}
     </TouchableOpacity>
   );
@@ -384,6 +519,11 @@ export default function ActivityHistoryScreen() {
   const weeklyStats = getWeeklyStats();
   const filteredActivities = getFilteredActivities();
   const groupedActivities = getGroupedActivities();
+
+  const translateX = slideAnimation.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: [-width, 0, width],
+  });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -470,11 +610,44 @@ export default function ActivityHistoryScreen() {
         })}
       </ScrollView>
 
-      {/* Calendar Week View */}
+      {/* Enhanced Calendar Week View with Navigation */}
       <View style={styles.calendarContainer}>
-        <View style={styles.calendarWeek}>
-          {calendarDays.map(renderCalendarDay)}
+        {/* Week Navigation Header */}
+        <View style={styles.weekNavigation}>
+          <TouchableOpacity 
+            style={styles.weekNavButton}
+            onPress={goToPreviousWeek}
+          >
+            <ChevronLeft size={24} color={colors.primary} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.weekRangeContainer}
+            onPress={goToCurrentWeek}
+          >
+            <Text style={styles.weekRangeText}>{formatWeekRange()}</Text>
+            {!isCurrentWeek() && (
+              <Text style={styles.goToTodayText}>Tap to go to current week</Text>
+            )}
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.weekNavButton}
+            onPress={goToNextWeek}
+          >
+            <ChevronRight size={24} color={colors.primary} />
+          </TouchableOpacity>
         </View>
+
+        {/* Animated Calendar Week */}
+        <Animated.View 
+          style={[
+            styles.calendarWeek,
+            { transform: [{ translateX }] }
+          ]}
+        >
+          {calendarDays.map(renderCalendarDay)}
+        </Animated.View>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -484,7 +657,7 @@ export default function ActivityHistoryScreen() {
             <View style={styles.daySectionHeader}>
               <View style={styles.activityDot} />
               <Text style={styles.daySectionTitle}>
-                {formatDateHeader(calendarDays.find(day => day.date === selectedDate)?.fullDate || '')}
+                {formatDateHeader(calendarDays.find(day => day.isSelected)?.fullDate || '')}
               </Text>
             </View>
             {filteredActivities.map(renderActivityEntry)}
@@ -509,7 +682,7 @@ export default function ActivityHistoryScreen() {
             .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
             .slice(0, 5)
             .map(([date, activities]) => {
-              const isSelectedDate = calendarDays.find(day => day.date === selectedDate)?.fullDate === date;
+              const isSelectedDate = calendarDays.find(day => day.isSelected)?.fullDate === date;
               if (isSelectedDate) return null;
               
               return (
@@ -662,6 +835,46 @@ const createStyles = (colors: any) => StyleSheet.create({
   calendarContainer: {
     paddingHorizontal: 20,
     paddingVertical: 16,
+    backgroundColor: colors.surface,
+    marginHorizontal: 20,
+    marginTop: 8,
+    borderRadius: 12,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  weekNavigation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  weekNavButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.surfaceSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  weekRangeContainer: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  weekRangeText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 16,
+    color: colors.text,
+    textAlign: 'center',
+  },
+  goToTodayText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 10,
+    color: colors.primary,
+    marginTop: 2,
   },
   calendarWeek: {
     flexDirection: 'row',
@@ -682,6 +895,9 @@ const createStyles = (colors: any) => StyleSheet.create({
   todayDay: {
     backgroundColor: colors.surfaceSecondary,
   },
+  otherMonthDay: {
+    opacity: 0.5,
+  },
   dayOfWeek: {
     fontFamily: 'Inter-Medium',
     fontSize: 12,
@@ -699,6 +915,9 @@ const createStyles = (colors: any) => StyleSheet.create({
   todayText: {
     color: colors.primary,
   },
+  otherMonthText: {
+    color: colors.textTertiary,
+  },
   activityDot: {
     position: 'absolute',
     bottom: 4,
@@ -706,6 +925,9 @@ const createStyles = (colors: any) => StyleSheet.create({
     height: 4,
     borderRadius: 2,
     backgroundColor: colors.primary,
+  },
+  otherMonthDot: {
+    backgroundColor: colors.textTertiary,
   },
   content: {
     flex: 1,
