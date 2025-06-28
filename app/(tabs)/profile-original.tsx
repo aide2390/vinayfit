@@ -6,12 +6,14 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { User, Settings, Clock, Droplets, TrendingUp, Calendar, Camera, ChartBar as BarChart3, Target, ChevronRight, Activity, LogOut, Footprints } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 import { useUserRole } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
@@ -30,32 +32,59 @@ export default function ProfileView() {
   const colors = getColors(colorScheme);
   const styles = createStyles(colors);
   const { userRole, userName, setUserRole } = useUserRole();
+  const { user, signOut } = useAuth();
 
-  const [userInitials] = useState('VD');
+  const [userInitials] = useState(user?.user_metadata?.first_name?.[0] + user?.user_metadata?.last_name?.[0] || 'VD');
   const [trainingMinutes] = useState(184);
   const [streakDays] = useState(0);
   const [currentWeight] = useState(69.5);
   const [goalWeight] = useState(68);
 
-  const handleLogout = () => {
-    setUserRole(null);
-    router.replace('/(auth)/login');
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { error } = await signOut();
+              if (error) {
+                console.error('Sign out error:', error);
+                Alert.alert('Error', 'Failed to sign out. Please try again.');
+              } else {
+                setUserRole(null);
+                router.replace('/(auth)/welcome');
+              }
+            } catch (error) {
+              console.error('Unexpected sign out error:', error);
+              Alert.alert('Error', 'An unexpected error occurred.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const menuItems = [
-    {
-      id: 'activity',
-      title: 'Activity history',
-      icon: Activity,
-      color: colors.primary,
-      onPress: () => router.push('/activity-history'),
-    },
     {
       id: 'steps',
       title: 'Steps',
       icon: Footprints,
       color: colors.success,
       onPress: () => router.push('/step-tracker'),
+    },
+    {
+      id: 'activity',
+      title: 'Activity history',
+      icon: Activity,
+      color: colors.primary,
+      onPress: () => router.push('/activity-history'),
     },
     {
       id: 'exercises',
@@ -151,7 +180,8 @@ export default function ProfileView() {
           </LinearGradient>
           
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>Hi, {userName}!</Text>
+            <Text style={styles.profileName}>Hi, {displayName}!</Text>
+            <Text style={styles.profileEmail}>{user?.email}</Text>
             <Text style={styles.profileRole}>Role: {userRole}</Text>
             {userRole === 'client' && (
               <TouchableOpacity 
@@ -285,6 +315,12 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontFamily: 'Inter-Bold',
     fontSize: 20,
     color: colors.text,
+    marginBottom: 4,
+  },
+  profileEmail: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   profileRole: {

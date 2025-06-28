@@ -11,6 +11,7 @@ import {
 } from '@expo-google-fonts/inter';
 import { SplashScreen } from 'expo-router';
 import { UserProvider } from '@/contexts/UserContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { initializeDefaultData } from '@/utils/storage';
 import { requestNotificationPermissions, addNotificationResponseReceivedListener, cleanupExpiredNotifications } from '@/utils/notificationService';
 import { router } from 'expo-router';
@@ -67,20 +68,22 @@ export default function RootLayout() {
   }
 
   return (
-    <UserProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="templates" />
-        <Stack.Screen name="create-template" />
-        <Stack.Screen name="workout-plans" />
-        <Stack.Screen name="create-plan" />
-        <Stack.Screen name="set-fitness-goal" />
-        <Stack.Screen name="goal-countdown" />
-        <Stack.Screen name="fitness-goals" />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="dark" />
-    </UserProvider>
+    <AuthProvider>
+      <UserProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="templates" />
+          <Stack.Screen name="create-template" />
+          <Stack.Screen name="workout-plans" />
+          <Stack.Screen name="create-plan" />
+          <Stack.Screen name="set-fitness-goal" />
+          <Stack.Screen name="goal-countdown" />
+          <Stack.Screen name="fitness-goals" />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <StatusBar style="dark" />
+      </UserProvider>
+    </AuthProvider>
   );
 }

@@ -3,11 +3,27 @@ import { StyleSheet } from 'react-native';
 import { Chrome as Home, Dumbbell, MessageSquare, Play, User, Users, Apple, Shield, Briefcase } from 'lucide-react-native';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 import { useUserRole } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useEffect } from 'react';
+import { router } from 'expo-router';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const colors = getColors(colorScheme);
   const { userRole } = useUserRole();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      // User is not authenticated, redirect to auth
+      router.replace('/(auth)/welcome');
+    }
+  }, [user, loading]);
+
+  // Show loading or redirect if not authenticated
+  if (loading || !user) {
+    return null;
+  }
 
   // Define role-specific tab configurations
   const getTabsForRole = () => {
