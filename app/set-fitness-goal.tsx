@@ -66,13 +66,14 @@ const emojiOptions = [
   '🏃‍♂️', '🏋️‍♂️', '🧘‍♀️', '🏊‍♂️', '🚴‍♂️', '⚖️', '📈', '📊', '⏰', '🎪'
 ];
 
-// Enhanced Toggle Component
+// Enhanced Toggle Component - moved to top and made self-contained
 const AnimatedToggle = ({ value, onValueChange, disabled = false }: {
   value: boolean;
   onValueChange: (value: boolean) => void;
   disabled?: boolean;
 }) => {
-  const colors = getColors(useColorScheme());
+  const colorScheme = useColorScheme();
+  const colors = getColors(colorScheme);
   const [animatedValue] = useState(new Animated.Value(value ? 1 : 0));
 
   useEffect(() => {
@@ -99,20 +100,50 @@ const AnimatedToggle = ({ value, onValueChange, disabled = false }: {
     outputRange: [colors.borderLight, colors.primary],
   });
 
+  const toggleStyles = StyleSheet.create({
+    toggle: {
+      width: 50,
+      height: 30,
+      justifyContent: 'center',
+    },
+    toggleDisabled: {
+      opacity: 0.5,
+    },
+    toggleTrack: {
+      width: 50,
+      height: 30,
+      borderRadius: 15,
+      justifyContent: 'center',
+      position: 'relative',
+    },
+    toggleThumb: {
+      width: 26,
+      height: 26,
+      backgroundColor: '#FFFFFF',
+      borderRadius: 13,
+      position: 'absolute',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+  });
+
   return (
     <TouchableOpacity
       style={[
-        styles.toggle,
-        disabled && styles.toggleDisabled
+        toggleStyles.toggle,
+        disabled && toggleStyles.toggleDisabled
       ]}
       onPress={handlePress}
       disabled={disabled}
       activeOpacity={0.7}
     >
-      <Animated.View style={[styles.toggleTrack, { backgroundColor }]}>
+      <Animated.View style={[toggleStyles.toggleTrack, { backgroundColor }]}>
         <Animated.View 
           style={[
-            styles.toggleThumb, 
+            toggleStyles.toggleThumb, 
             { transform: [{ translateX }] }
           ]} 
         />
@@ -802,33 +833,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'flex-start',
     gap: 12,
     flex: 1,
-  },
-  toggle: {
-    width: 50,
-    height: 30,
-    justifyContent: 'center',
-  },
-  toggleDisabled: {
-    opacity: 0.5,
-  },
-  toggleTrack: {
-    width: 50,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  toggleThumb: {
-    width: 26,
-    height: 26,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 13,
-    position: 'absolute',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
   },
   modalContainer: {
     flex: 1,
