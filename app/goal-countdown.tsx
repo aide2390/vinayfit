@@ -10,21 +10,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
-  ArrowLeft, 
-  Target, 
-  Calendar,
-  Clock,
-  TrendingUp,
-  Share2,
-  Edit3,
-  Trash2,
-  CheckCircle,
-  Circle,
-  Trophy,
-  Flame,
-  Zap
-} from 'lucide-react-native';
+import { ArrowLeft, Target, Calendar, Clock, TrendingUp, Share2, CreditCard as Edit3, Trash2, CircleCheck as CheckCircle, Circle, Trophy, Flame, Zap } from 'lucide-react-native';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 import { router, useLocalSearchParams } from 'expo-router';
 
