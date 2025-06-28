@@ -17,7 +17,9 @@ import {
   Calendar,
   X,
   Play,
-  Dumbbell
+  Dumbbell,
+  Clock,
+  Flame
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme, getColors } from '../../hooks/useColorScheme';
@@ -39,6 +41,12 @@ export default function TodayClientView() {
   const [userName] = useState('Vinay');
   const [todaysWorkout, setTodaysWorkout] = useState<WorkoutTemplate | null>(null);
   const [currentPlan, setCurrentPlan] = useState<WorkoutPlan | null>(null);
+  const [activeGoal, setActiveGoal] = useState({
+    title: 'Lose 10kg for Summer',
+    emoji: '🏖️',
+    daysLeft: 48,
+    progress: 65
+  });
 
   useEffect(() => {
     loadTodaysWorkout();
@@ -99,6 +107,10 @@ export default function TodayClientView() {
     }
   };
 
+  const handleGoalPress = () => {
+    router.push('/fitness-goals');
+  };
+
   const renderTodaysWorkout = () => {
     if (!todaysWorkout) {
       return (
@@ -154,6 +166,46 @@ export default function TodayClientView() {
 
         {/* Today's Workout */}
         {renderTodaysWorkout()}
+
+        {/* Fitness Goal Card */}
+        <TouchableOpacity style={styles.goalCard} onPress={handleGoalPress}>
+          <View style={styles.goalHeader}>
+            <View style={styles.goalTitleContainer}>
+              <Text style={styles.goalEmoji}>{activeGoal.emoji}</Text>
+              <View>
+                <Text style={styles.goalTitle}>{activeGoal.title}</Text>
+                <Text style={styles.goalSubtitle}>
+                  {activeGoal.daysLeft} days left • {activeGoal.progress}% complete
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity 
+              style={styles.addGoalButton}
+              onPress={() => router.push('/set-fitness-goal')}
+            >
+              <Plus size={16} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.goalProgressContainer}>
+            <View style={styles.goalProgressBar}>
+              <View 
+                style={[
+                  styles.goalProgressFill, 
+                  { width: `${activeGoal.progress}%` }
+                ]} 
+              />
+            </View>
+            <Text style={styles.goalProgressText}>{activeGoal.progress}%</Text>
+          </View>
+
+          <View style={styles.goalCountdown}>
+            <Clock size={16} color={colors.textSecondary} />
+            <Text style={styles.goalCountdownText}>
+              {activeGoal.daysLeft} days remaining
+            </Text>
+          </View>
+        </TouchableOpacity>
 
         {/* Missed Workout Alert */}
         {showMissedWorkout && (
@@ -379,6 +431,85 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  goalCard: {
+    backgroundColor: colors.surface,
+    marginHorizontal: 20,
+    marginBottom: 16,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  goalHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  goalTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    flex: 1,
+  },
+  goalEmoji: {
+    fontSize: 32,
+    marginRight: 12,
+  },
+  goalTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 16,
+    color: colors.text,
+    marginBottom: 4,
+  },
+  goalSubtitle: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  addGoalButton: {
+    width: 32,
+    height: 32,
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  goalProgressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  goalProgressBar: {
+    flex: 1,
+    height: 8,
+    backgroundColor: colors.borderLight,
+    borderRadius: 4,
+    marginRight: 12,
+  },
+  goalProgressFill: {
+    height: '100%',
+    backgroundColor: colors.success,
+    borderRadius: 4,
+  },
+  goalProgressText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 14,
+    color: colors.success,
+    minWidth: 40,
+  },
+  goalCountdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  goalCountdownText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 12,
+    color: colors.textSecondary,
   },
   alertCard: {
     backgroundColor: colors.surface,

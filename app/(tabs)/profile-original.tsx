@@ -71,6 +71,14 @@ export default function ProfileView() {
       color: colors.error,
       onPress: () => {},
     },
+    // Add fitness goals menu item for clients
+    ...(userRole === 'client' ? [{
+      id: 'goals',
+      title: 'Fitness Goals',
+      icon: Target,
+      color: colors.info,
+      onPress: () => router.push('/fitness-goals'),
+    }] : []),
     {
       id: 'logout',
       title: 'Logout',
@@ -145,11 +153,16 @@ export default function ProfileView() {
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>Hi, {userName}!</Text>
             <Text style={styles.profileRole}>Role: {userRole}</Text>
-            <TouchableOpacity style={styles.goalButton}>
-              <Text style={styles.goalButtonText}>
-                Set your fitness goal <Text style={styles.goalButtonLink}>(add)</Text>
-              </Text>
-            </TouchableOpacity>
+            {userRole === 'client' && (
+              <TouchableOpacity 
+                style={styles.goalButton}
+                onPress={() => router.push('/set-fitness-goal')}
+              >
+                <Text style={styles.goalButtonText}>
+                  Set your fitness goal <Text style={styles.goalButtonLink}>(add)</Text>
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
