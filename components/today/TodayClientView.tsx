@@ -27,7 +27,6 @@ import { router } from 'expo-router';
 import { WorkoutPlan, WorkoutTemplate } from '@/types/workout';
 import { getClientPlans, getTemplate } from '@/utils/storage';
 import { getDayOfWeek, isToday } from '@/utils/workoutUtils';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -35,7 +34,6 @@ export default function TodayClientView() {
   const colorScheme = useColorScheme();
   const colors = getColors(colorScheme);
   const styles = createStyles(colors);
-  const insets = useSafeAreaInsets();
 
   const [showMissedWorkout, setShowMissedWorkout] = useState(true);
   const [steps, setSteps] = useState(2847);
@@ -156,14 +154,11 @@ export default function TodayClientView() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <ScrollView 
         style={styles.scrollView} 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 80 } // Add extra padding for tab bar
-        ]}
+        contentContainerStyle={styles.scrollContent}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -345,15 +340,12 @@ export default function TodayClientView() {
 
       {/* Floating Action Button */}
       <TouchableOpacity 
-        style={[
-          styles.fab,
-          { bottom: insets.bottom + 80 } // Position above tab bar
-        ]} 
+        style={styles.fab} 
         onPress={handleFabPress}
       >
         <Plus size={28} color="#FFFFFF" strokeWidth={2} />
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -366,11 +358,11 @@ const createStyles = (colors: any) => StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
+    paddingBottom: 100, // Add padding for tab bar and FAB
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingTop: 60, // Add top padding for status bar
     paddingBottom: 20,
   },
   dateText: {
@@ -674,6 +666,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   fab: {
     position: 'absolute',
+    bottom: 100, // Position above tab bar
     right: 20,
     width: 56,
     height: 56,

@@ -6,14 +6,12 @@ import { useUserRole } from '@/contexts/UserContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
 import { router } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const colors = getColors(colorScheme);
   const { userRole } = useUserRole();
   const { user, loading } = useAuth();
-  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -173,8 +171,6 @@ export default function TabLayout() {
           { 
             backgroundColor: colors.surface,
             borderTopColor: colors.border,
-            paddingBottom: Platform.OS === 'ios' ? insets.bottom : 8,
-            height: Platform.OS === 'ios' ? 60 + insets.bottom : 60,
           }
         ],
         tabBarActiveTintColor: colors.primary,
@@ -204,10 +200,8 @@ const styles = StyleSheet.create({
   tabBar: {
     borderTopWidth: 1,
     paddingTop: 8,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+    height: Platform.OS === 'ios' ? 80 : 60,
   },
   tabBarLabel: {
     fontFamily: 'Inter-Medium',
