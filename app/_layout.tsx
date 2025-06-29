@@ -110,7 +110,7 @@ export default function RootLayout() {
   }
 
   // Determine status bar style based on color scheme
-  const statusBarStyle = colorScheme === 'dark' ? 'light' : 'dark';
+  // const statusBarStyle = colorScheme === 'dark' ? 'light' : 'dark';
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -145,11 +145,7 @@ export default function RootLayout() {
             )}
           </Stack>
           {/* Use expo-status-bar for better cross-platform compatibility */}
-          <StatusBar 
-            style={statusBarStyle} 
-            backgroundColor={colors.background}
-            translucent={false}
-          />
+         
         </AuthProvider>
       </UserProvider>
     </View>
