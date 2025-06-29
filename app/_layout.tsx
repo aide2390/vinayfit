@@ -98,8 +98,8 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <UserProvider>
+    <UserProvider>
+      <AuthProvider>
         <Stack screenOptions={{ headerShown: false }}>
           {showCustomSplash ? (
             <Stack.Screen name="splash" />
@@ -124,7 +124,7 @@ export default function RootLayout() {
           )}
         </Stack>
         <StatusBar style="auto" />
-      </UserProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </UserProvider>
   );
 }
