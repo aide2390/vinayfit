@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { StyleSheet, Platform, View } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { Chrome as Home, Dumbbell, MessageSquare, Play, User, Users, Apple, Shield, Briefcase } from 'lucide-react-native';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 import { useUserRole } from '@/contexts/UserContext';
@@ -163,50 +163,55 @@ export default function TabLayout() {
   const tabs = getTabsForRole();
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarStyle: [
-            styles.tabBar, 
-            { 
-              backgroundColor: colors.surface,
-              borderTopColor: colors.border,
-            }
-          ],
-          tabBarActiveTintColor: colors.primary,
-          tabBarInactiveTintColor: colors.textTertiary,
-          tabBarLabelStyle: styles.tabBarLabel,
-        }}>
-        {tabs.map((tab) => {
-          const IconComponent = tab.icon;
-          return (
-            <Tabs.Screen
-              key={tab.name}
-              name={tab.name}
-              options={{
-                title: tab.title,
-                tabBarIcon: ({ size, color }) => (
-                  <IconComponent size={size} color={color} />
-                ),
-              }}
-            />
-          );
-        })}
-      </Tabs>
-    </View>
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: [
+          styles.tabBar, 
+          { 
+            backgroundColor: colors.surface,
+            borderTopColor: colors.border,
+          }
+        ],
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textTertiary,
+        tabBarLabelStyle: styles.tabBarLabel,
+        sceneStyle: { backgroundColor: colors.background },
+      }}>
+      {tabs.map((tab) => {
+        const IconComponent = tab.icon;
+        return (
+          <Tabs.Screen
+            key={tab.name}
+            name={tab.name}
+            options={{
+              title: tab.title,
+              tabBarIcon: ({ size, color }) => (
+                <IconComponent size={size} color={color} />
+              ),
+            }}
+          />
+        );
+      })}
+    </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   tabBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     borderTopWidth: 1,
     paddingTop: 8,
     paddingBottom: Platform.OS === 'ios' ? 20 : 8,
     height: Platform.OS === 'ios' ? 80 : 60,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   tabBarLabel: {
     fontFamily: 'Inter-Medium',

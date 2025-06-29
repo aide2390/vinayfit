@@ -51,21 +51,20 @@ export default function RootLayout() {
           // Mark as ready
           setIsReady(true);
           
-         
-    
+          // Show custom splash for a minimum duration
+          setTimeout(() => {
+            setShowCustomSplash(false);
+          }, 3000); // Show for 3 seconds minimum
+        }
+      } catch (error) {
+        console.error('Error during app initialization:', error);
+        setIsReady(true);
+        setShowCustomSplash(false);
+      }
     }
 
     prepare();
   }, [fontsLoaded, fontError]);
-
-  // Set status bar style based on color scheme
-  useEffect(() => {
-    if (Platform.OS === 'ios') {
-      // For iOS, we can set the status bar style programmatically
-      const { StatusBar } = require('react-native');
-      StatusBar.setBarStyle(colorScheme === 'dark' ? 'light-content' : 'dark-content', true);
-    }
-  }, [colorScheme]);
 
   const initializeNotifications = async () => {
     try {
@@ -100,18 +99,13 @@ export default function RootLayout() {
     return null;
   }
 
-  // Determine status bar style based on color scheme
-  // const statusBarStyle = colorScheme === 'dark' ? 'light' : 'dark';
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <UserProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <UserProvider>
           <Stack screenOptions={{ 
             headerShown: false,
-            // Ensure consistent status bar across all screens
-            statusBarStyle: statusBarStyle,
-            statusBarBackgroundColor: colors.background,
+            contentStyle: { backgroundColor: colors.background },
           }}>
             {showCustomSplash ? (
               <Stack.Screen name="splash" />
@@ -135,10 +129,9 @@ export default function RootLayout() {
               </>
             )}
           </Stack>
-          {/* Use expo-status-bar for better cross-platform compatibility */}
-         
-        </AuthProvider>
-      </UserProvider>
+          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} backgroundColor={colors.background} />
+        </UserProvider>
+      </AuthProvider>
     </View>
   );
 }
