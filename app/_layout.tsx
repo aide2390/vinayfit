@@ -100,9 +100,9 @@ export default function RootLayout() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <AuthProvider>
-        <UserProvider>
+    <AuthProvider>
+      <UserProvider>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
           <Stack screenOptions={{ 
             headerShown: false,
             contentStyle: { backgroundColor: colors.background },
@@ -129,10 +129,14 @@ export default function RootLayout() {
               </>
             )}
           </Stack>
-          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} backgroundColor={colors.background} />
-        </UserProvider>
-      </AuthProvider>
-    </View>
+          <StatusBar 
+            style={colorScheme === 'dark' ? 'light' : 'dark'} 
+            backgroundColor={colors.background}
+            translucent={false}
+          />
+        </View>
+      </UserProvider>
+    </AuthProvider>
   );
 }
 
