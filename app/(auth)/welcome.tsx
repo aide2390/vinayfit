@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  StyleSheet
+  StyleSheet,
   TouchableOpacity,
   Dimensions,
   ScrollView,
