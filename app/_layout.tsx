@@ -52,12 +52,7 @@ export default function RootLayout() {
           setIsReady(true);
           
          
-      } catch (error) {
-        console.error('Error during app initialization:', error);
-        // Still mark as ready to prevent infinite loading
-        setIsReady(true);
-        setShowCustomSplash(false);
-      }
+    
     }
 
     prepare();
