@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { useFonts } from 'expo-font';
 import {
@@ -15,7 +15,6 @@ import { UserProvider } from '@/contexts/UserContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { initializeDefaultData } from '@/utils/storage';
 import { requestNotificationPermissions, addNotificationResponseReceivedListener, cleanupExpiredNotifications } from '@/utils/notificationService';
-import { Platform } from 'react-native';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 
 SplashScreen.preventAutoHideAsync();
@@ -68,6 +67,15 @@ export default function RootLayout() {
     prepare();
   }, [fontsLoaded, fontError]);
 
+  // Set status bar style based on color scheme
+  useEffect(() => {
+    if (Platform.OS === 'ios') {
+      // For iOS, we can set the status bar style programmatically
+      const { StatusBar } = require('react-native');
+      StatusBar.setBarStyle(colorScheme === 'dark' ? 'light-content' : 'dark-content', true);
+    }
+  }, [colorScheme]);
+
   const initializeNotifications = async () => {
     try {
       // Request notification permissions
@@ -101,11 +109,19 @@ export default function RootLayout() {
     return null;
   }
 
+  // Determine status bar style based on color scheme
+  const statusBarStyle = colorScheme === 'dark' ? 'light' : 'dark';
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <UserProvider>
         <AuthProvider>
-          <Stack screenOptions={{ headerShown: false }}>
+          <Stack screenOptions={{ 
+            headerShown: false,
+            // Ensure consistent status bar across all screens
+            statusBarStyle: statusBarStyle,
+            statusBarBackgroundColor: colors.background,
+          }}>
             {showCustomSplash ? (
               <Stack.Screen name="splash" />
             ) : (
@@ -128,7 +144,12 @@ export default function RootLayout() {
               </>
             )}
           </Stack>
-          <StatusBar style="auto" />
+          {/* Use expo-status-bar for better cross-platform compatibility */}
+          <StatusBar 
+            style={statusBarStyle} 
+            backgroundColor={colors.background}
+            translucent={false}
+          />
         </AuthProvider>
       </UserProvider>
     </View>
