@@ -198,7 +198,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     paddingTop: 8,
     paddingBottom: 8,
-    height: 70,
+    height: 60,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   tabBarLabel: {
     fontFamily: 'Inter-Medium',
