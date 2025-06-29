@@ -154,198 +154,200 @@ export default function TodayClientView() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView 
-        style={styles.scrollView} 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.dateText}>{getCurrentDate()}</Text>
-          <Text style={styles.greetingText}>
-            {getGreeting()}, {userName}! 👋
-          </Text>
-        </View>
-
-        {/* Today's Workout */}
-        {renderTodaysWorkout()}
-
-        {/* Fitness Goal Card */}
-        <TouchableOpacity style={styles.goalCard} onPress={handleGoalPress}>
-          <View style={styles.goalHeader}>
-            <View style={styles.goalTitleContainer}>
-              <Text style={styles.goalEmoji}>{activeGoal.emoji}</Text>
-              <View>
-                <Text style={styles.goalTitle}>{activeGoal.title}</Text>
-                <Text style={styles.goalSubtitle}>
-                  {activeGoal.daysLeft} days left • {activeGoal.progress}% complete
-                </Text>
-              </View>
-            </View>
-            <TouchableOpacity 
-              style={styles.addGoalButton}
-              onPress={() => router.push('/set-fitness-goal')}
-            >
-              <Plus size={16} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.goalProgressContainer}>
-            <View style={styles.goalProgressBar}>
-              <View 
-                style={[
-                  styles.goalProgressFill, 
-                  { width: `${activeGoal.progress}%` }
-                ]} 
-              />
-            </View>
-            <Text style={styles.goalProgressText}>{activeGoal.progress}%</Text>
-          </View>
-
-          <View style={styles.goalCountdown}>
-            <Clock size={16} color={colors.textSecondary} />
-            <Text style={styles.goalCountdownText}>
-              {activeGoal.daysLeft} days remaining
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <ScrollView 
+          style={styles.scrollView} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.dateText}>{getCurrentDate()}</Text>
+            <Text style={styles.greetingText}>
+              {getGreeting()}, {userName}! 👋
             </Text>
           </View>
-        </TouchableOpacity>
 
-        {/* Missed Workout Alert */}
-        {showMissedWorkout && (
-          <View style={styles.alertCard}>
-            <View style={styles.alertContent}>
-              <Text style={styles.alertIcon}>⚠️</Text>
-              <Text style={styles.alertText}>
-                You missed <Text style={styles.alertHighlight}>1 workout</Text> from Saturday
-              </Text>
-            </View>
-            <TouchableOpacity 
-              onPress={() => setShowMissedWorkout(false)}
-              style={styles.alertClose}
-            >
-              <X size={18} color={colors.error} />
-            </TouchableOpacity>
-          </View>
-        )}
+          {/* Today's Workout */}
+          {renderTodaysWorkout()}
 
-        {/* Steps Tracker */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Steps tracker</Text>
-            <Footprints size={24} color={colors.primary} />
-          </View>
-          
-          <View style={styles.stepsContent}>
-            <View style={styles.stepsInfo}>
-              <Text style={styles.stepsNumber}>
-                {steps.toLocaleString()}
-              </Text>
-              <Text style={styles.stepsGoal}>/ {stepGoal.toLocaleString()} steps</Text>
+          {/* Fitness Goal Card */}
+          <TouchableOpacity style={styles.goalCard} onPress={handleGoalPress}>
+            <View style={styles.goalHeader}>
+              <View style={styles.goalTitleContainer}>
+                <Text style={styles.goalEmoji}>{activeGoal.emoji}</Text>
+                <View>
+                  <Text style={styles.goalTitle}>{activeGoal.title}</Text>
+                  <Text style={styles.goalSubtitle}>
+                    {activeGoal.daysLeft} days left • {activeGoal.progress}% complete
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity 
+                style={styles.addGoalButton}
+                onPress={() => router.push('/set-fitness-goal')}
+              >
+                <Plus size={16} color={colors.primary} />
+              </TouchableOpacity>
             </View>
             
-            <View style={styles.progressContainer}>
-              <View style={styles.progressBackground}>
+            <View style={styles.goalProgressContainer}>
+              <View style={styles.goalProgressBar}>
                 <View 
                   style={[
-                    styles.progressFill, 
-                    { width: `${Math.min(stepProgress, 100)}%` }
+                    styles.goalProgressFill, 
+                    { width: `${activeGoal.progress}%` }
                   ]} 
                 />
               </View>
-              <Text style={styles.progressText}>{Math.round(stepProgress)}%</Text>
+              <Text style={styles.goalProgressText}>{activeGoal.progress}%</Text>
             </View>
-          </View>
-        </View>
 
-        {/* Quick Actions */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Quick Actions</Text>
-            <Dumbbell size={24} color={colors.success} />
-          </View>
-          
-          <View style={styles.actionGrid}>
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={() => router.push('/templates')}
-            >
-              <Text style={styles.actionButtonText}>View Templates</Text>
-            </TouchableOpacity>
+            <View style={styles.goalCountdown}>
+              <Clock size={16} color={colors.textSecondary} />
+              <Text style={styles.goalCountdownText}>
+                {activeGoal.daysLeft} days remaining
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Missed Workout Alert */}
+          {showMissedWorkout && (
+            <View style={styles.alertCard}>
+              <View style={styles.alertContent}>
+                <Text style={styles.alertIcon}>⚠️</Text>
+                <Text style={styles.alertText}>
+                  You missed <Text style={styles.alertHighlight}>1 workout</Text> from Saturday
+                </Text>
+              </View>
+              <TouchableOpacity 
+                onPress={() => setShowMissedWorkout(false)}
+                style={styles.alertClose}
+              >
+                <X size={18} color={colors.error} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Steps Tracker */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Steps tracker</Text>
+              <Footprints size={24} color={colors.primary} />
+            </View>
             
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={() => router.push('/workout-history')}
-            >
-              <Text style={styles.actionButtonText}>Workout History</Text>
+            <View style={styles.stepsContent}>
+              <View style={styles.stepsInfo}>
+                <Text style={styles.stepsNumber}>
+                  {steps.toLocaleString()}
+                </Text>
+                <Text style={styles.stepsGoal}>/ {stepGoal.toLocaleString()} steps</Text>
+              </View>
+              
+              <View style={styles.progressContainer}>
+                <View style={styles.progressBackground}>
+                  <View 
+                    style={[
+                      styles.progressFill, 
+                      { width: `${Math.min(stepProgress, 100)}%` }
+                    ]} 
+                  />
+                </View>
+                <Text style={styles.progressText}>{Math.round(stepProgress)}%</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Quick Actions */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Quick Actions</Text>
+              <Dumbbell size={24} color={colors.success} />
+            </View>
+            
+            <View style={styles.actionGrid}>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => router.push('/templates')}
+              >
+                <Text style={styles.actionButtonText}>View Templates</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => router.push('/workout-history')}
+              >
+                <Text style={styles.actionButtonText}>Workout History</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Macros */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Macros</Text>
+              <Target size={24} color={colors.success} />
+            </View>
+            
+            <Text style={styles.cardSubtitle}>
+              Start by setting your daily goal
+            </Text>
+            
+            <TouchableOpacity style={styles.actionButton}>
+              <Text style={styles.actionButtonText}>Set daily goal</Text>
             </TouchableOpacity>
           </View>
-        </View>
 
-        {/* Macros */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Macros</Text>
-            <Target size={24} color={colors.success} />
-          </View>
-          
-          <Text style={styles.cardSubtitle}>
-            Start by setting your daily goal
-          </Text>
-          
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionButtonText}>Set daily goal</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Food Journal */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Food Journal</Text>
-            <UtensilsCrossed size={24} color={colors.warning} />
-          </View>
-          
-          <Text style={styles.cardSubtitle}>
-            What did you eat today?
-          </Text>
-          
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionButtonText}>Add meal</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Quick Stats */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Today's Progress</Text>
-            <TrendingUp size={24} color={colors.error} />
-          </View>
-          
-          <View style={styles.statsGrid}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>0</Text>
-              <Text style={styles.statLabel}>Workouts</Text>
+          {/* Food Journal */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Food Journal</Text>
+              <UtensilsCrossed size={24} color={colors.warning} />
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>0</Text>
-              <Text style={styles.statLabel}>Calories</Text>
+            
+            <Text style={styles.cardSubtitle}>
+              What did you eat today?
+            </Text>
+            
+            <TouchableOpacity style={styles.actionButton}>
+              <Text style={styles.actionButtonText}>Add meal</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Quick Stats */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Today's Progress</Text>
+              <TrendingUp size={24} color={colors.error} />
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>0</Text>
-              <Text style={styles.statLabel}>Water (L)</Text>
+            
+            <View style={styles.statsGrid}>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>0</Text>
+                <Text style={styles.statLabel}>Workouts</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>0</Text>
+                <Text style={styles.statLabel}>Calories</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>0</Text>
+                <Text style={styles.statLabel}>Water (L)</Text>
+              </View>
             </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
 
-      {/* Floating Action Button */}
-      <TouchableOpacity 
-        style={styles.fab} 
-        onPress={handleFabPress}
-      >
-        <Plus size={28} color="#FFFFFF" strokeWidth={2} />
-      </TouchableOpacity>
-    </SafeAreaView>
+        {/* Floating Action Button */}
+        <TouchableOpacity 
+          style={styles.fab} 
+          onPress={handleFabPress}
+        >
+          <Plus size={28} color="#FFFFFF" strokeWidth={2} />
+        </TouchableOpacity>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -353,6 +355,9 @@ const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  safeArea: {
+    flex: 1,
   },
   scrollView: {
     flex: 1,
