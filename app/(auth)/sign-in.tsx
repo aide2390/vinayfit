@@ -71,14 +71,35 @@ export default function SignInScreen() {
       }
 
       if (data.user) {
-        // Navigation will be handled by the auth state change in AuthContext
-        console.log('Sign in successful');
+        console.log('Sign in successful, navigating to main app...');
+        
+        // Use setTimeout to ensure navigation happens after auth state is updated
+        setTimeout(() => {
+          router.replace('/(tabs)');
+        }, 100);
       }
     } catch (error) {
       console.error('Unexpected error:', error);
       setErrors({ general: 'An unexpected error occurred. Please try again.' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Demo accounts helper
+  const handleDemoLogin = (role: string) => {
+    const demoAccounts = {
+      client: { email: 'client@demo.com', password: 'demo123' },
+      trainer: { email: 'trainer@demo.com', password: 'demo123' },
+      nutritionist: { email: 'nutritionist@demo.com', password: 'demo123' },
+      admin: { email: 'admin@demo.com', password: 'demo123' },
+      hr: { email: 'hr@demo.com', password: 'demo123' },
+    };
+
+    const account = demoAccounts[role as keyof typeof demoAccounts];
+    if (account) {
+      setEmail(account.email);
+      setPassword(account.password);
     }
   };
 
@@ -96,6 +117,22 @@ export default function SignInScreen() {
             </TouchableOpacity>
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Sign in to continue your fitness journey</Text>
+          </View>
+
+          {/* Demo Accounts */}
+          <View style={styles.demoSection}>
+            <Text style={styles.demoTitle}>Demo Accounts</Text>
+            <View style={styles.demoButtons}>
+              {['client', 'trainer', 'nutritionist', 'admin', 'hr'].map((role) => (
+                <TouchableOpacity
+                  key={role}
+                  style={styles.demoButton}
+                  onPress={() => handleDemoLogin(role)}
+                >
+                  <Text style={styles.demoButtonText}>{role}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
           {/* Form */}
@@ -219,7 +256,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
   backButton: {
     width: 40,
@@ -241,6 +278,35 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     color: colors.textSecondary,
     lineHeight: 24,
+  },
+  demoSection: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  demoTitle: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: colors.text,
+    marginBottom: 12,
+  },
+  demoButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  demoButton: {
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  demoButtonText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 12,
+    color: colors.primary,
+    textTransform: 'capitalize',
   },
   form: {
     paddingHorizontal: 20,

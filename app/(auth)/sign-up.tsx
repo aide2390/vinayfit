@@ -12,10 +12,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowLeft, Eye, EyeOff, Mail, Lock, User, Loader, Check } from 'lucide-react-native';
+import { ArrowLeft, Eye, EyeOff, Mail, Lock, User, Loader, Check, ChevronDown } from 'lucide-react-native';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
+import { UserRole } from '@/contexts/UserContext';
+
+const roleOptions: { value: UserRole; label: string; description: string }[] = [
+  { value: 'client', label: 'Client', description: 'I want to track my fitness journey' },
+  { value: 'trainer', label: 'Trainer', description: 'I help clients with their workouts' },
+  { value: 'nutritionist', label: 'Nutritionist', description: 'I provide nutrition guidance' },
+  { value: 'admin', label: 'Admin', description: 'I manage the platform' },
+  { value: 'hr', label: 'HR', description: 'I handle human resources' },
+];
 
 export default function SignUpScreen() {
   const colorScheme = useColorScheme();
@@ -29,9 +38,11 @@ export default function SignUpScreen() {
     email: '',
     password: '',
     confirmPassword: '',
+    role: 'client' as UserRole,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showRoleSelector, setShowRoleSelector] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{
     firstName?: string;
@@ -86,6 +97,7 @@ export default function SignUpScreen() {
         first_name: formData.firstName.trim(),
         last_name: formData.lastName.trim(),
         full_name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+        role: formData.role,
       };
 
       const { data, error } = await signUp(formData.email.trim(), formData.password, userData);
@@ -106,7 +118,10 @@ export default function SignUpScreen() {
           'Account Created! 🎉',
           'Welcome to VinayFit! Your account has been created successfully.',
           [{ text: 'Get Started', onPress: () => {
-            // Navigation will be handled by the auth state change in AuthContext
+            // Use setTimeout to ensure navigation happens after auth state is updated
+            setTimeout(() => {
+              router.replace('/(tabs)');
+            }, 100);
           }}]
         );
       }
@@ -137,6 +152,7 @@ export default function SignUpScreen() {
   };
 
   const passwordStrength = getPasswordStrength();
+  const selectedRole = roleOptions.find(role => role.value === formData.role);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -162,6 +178,59 @@ export default function SignUpScreen() {
                 <Text style={styles.errorText}>{errors.general}</Text>
               </View>
             )}
+
+            {/* Role Selection */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>I am a</Text>
+              <TouchableOpacity
+                style={styles.roleSelector}
+                onPress={() => setShowRoleSelector(!showRoleSelector)}
+              >
+                <View style={styles.roleSelectorContent}>
+                  <View>
+                    <Text style={styles.roleSelectorText}>{selectedRole?.label}</Text>
+                    <Text style={styles.roleSelectorDescription}>{selectedRole?.description}</Text>
+                  </View>
+                  <ChevronDown size={20} color={colors.textSecondary} />
+                </View>
+              </TouchableOpacity>
+              
+              {showRoleSelector && (
+                <View style={styles.roleOptions}>
+                  {roleOptions.map((role) => (
+                    <TouchableOpacity
+                      key={role.value}
+                      style={[
+                        styles.roleOption,
+                        formData.role === role.value && styles.selectedRoleOption
+                      ]}
+                      onPress={() => {
+                        updateFormData('role', role.value);
+                        setShowRoleSelector(false);
+                      }}
+                    >
+                      <View>
+                        <Text style={[
+                          styles.roleOptionLabel,
+                          formData.role === role.value && styles.selectedRoleOptionText
+                        ]}>
+                          {role.label}
+                        </Text>
+                        <Text style={[
+                          styles.roleOptionDescription,
+                          formData.role === role.value && styles.selectedRoleOptionText
+                        ]}>
+                          {role.description}
+                        </Text>
+                      </View>
+                      {formData.role === role.value && (
+                        <Check size={16} color={colors.primary} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
 
             {/* Name Inputs */}
             <View style={styles.nameRow}>
@@ -364,7 +433,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
   backButton: {
     width: 40,
@@ -404,6 +473,62 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 14,
     color: colors.error,
     textAlign: 'center',
+  },
+  roleSelector: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    padding: 16,
+  },
+  roleSelectorContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  roleSelectorText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: colors.text,
+    marginBottom: 2,
+  },
+  roleSelectorDescription: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  roleOptions: {
+    marginTop: 8,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  roleOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
+  selectedRoleOption: {
+    backgroundColor: `${colors.primary}10`,
+  },
+  roleOptionLabel: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+    color: colors.text,
+    marginBottom: 2,
+  },
+  roleOptionDescription: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  selectedRoleOptionText: {
+    color: colors.primary,
   },
   nameRow: {
     flexDirection: 'row',
