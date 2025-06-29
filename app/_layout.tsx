@@ -51,11 +51,7 @@ export default function RootLayout() {
           // Mark as ready
           setIsReady(true);
           
-          // Show custom splash for a minimum duration
-          setTimeout(() => {
-            setShowCustomSplash(false);
-          }, 3000); // Show for 3 seconds minimum
-        }
+         
       } catch (error) {
         console.error('Error during app initialization:', error);
         // Still mark as ready to prevent infinite loading
