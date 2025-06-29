@@ -199,14 +199,10 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     borderTopWidth: 1,
     paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 20 : 8,
-    height: Platform.OS === 'ios' ? 80 : 60,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 8,
+    height: Platform.OS === 'ios' ? 88 : 64,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
