@@ -6,7 +6,6 @@ import { useUserRole } from '@/contexts/UserContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
 import { router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -164,7 +163,7 @@ export default function TabLayout() {
   const tabs = getTabsForRole();
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -195,7 +194,7 @@ export default function TabLayout() {
           );
         })}
       </Tabs>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -208,10 +207,6 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: Platform.OS === 'ios' ? 20 : 8,
     height: Platform.OS === 'ios' ? 80 : 60,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
   },
   tabBarLabel: {
     fontFamily: 'Inter-Medium',

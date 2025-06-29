@@ -16,11 +16,14 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { initializeDefaultData } from '@/utils/storage';
 import { requestNotificationPermissions, addNotificationResponseReceivedListener, cleanupExpiredNotifications } from '@/utils/notificationService';
 import { Platform } from 'react-native';
+import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   useFrameworkReady();
+  const colorScheme = useColorScheme();
+  const colors = getColors(colorScheme);
   const [showCustomSplash, setShowCustomSplash] = useState(true);
   const [isReady, setIsReady] = useState(false);
 
@@ -99,7 +102,7 @@ export default function RootLayout() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <UserProvider>
         <AuthProvider>
           <Stack screenOptions={{ headerShown: false }}>
@@ -135,6 +138,5 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC', // Light mode background
   },
 });
