@@ -15,8 +15,12 @@ export default function TabLayout() {
 
   useEffect(() => {
     if (!loading && !user) {
-      // User is not authenticated, redirect to auth
-      router.replace('/(auth)/welcome');
+      // Use setTimeout to ensure navigation happens after component is mounted
+      const timer = setTimeout(() => {
+        router.replace('/(auth)/welcome');
+      }, 100);
+
+      return () => clearTimeout(timer);
     }
   }, [user, loading]);
 

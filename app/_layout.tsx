@@ -14,13 +14,14 @@ import { UserProvider } from '@/contexts/UserContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { initializeDefaultData } from '@/utils/storage';
 import { requestNotificationPermissions, addNotificationResponseReceivedListener, cleanupExpiredNotifications } from '@/utils/notificationService';
-import { router } from 'expo-router';
+import { Platform } from 'react-native';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   useFrameworkReady();
   const [showCustomSplash, setShowCustomSplash] = useState(true);
+  const [isReady, setIsReady] = useState(false);
 
   const [fontsLoaded, fontError] = useFonts({
     'Inter-Regular': Inter_400Regular,
@@ -30,21 +31,37 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
-      // Hide the default splash screen
-      SplashScreen.hideAsync();
-      
-      // Initialize app data
-      initializeDefaultData();
-      
-      // Initialize notifications
-      initializeNotifications();
-      
-      // Show custom splash for a minimum duration
-      setTimeout(() => {
+    async function prepare() {
+      try {
+        if (fontsLoaded || fontError) {
+          // Hide the default splash screen
+          await SplashScreen.hideAsync();
+          
+          // Initialize app data
+          await initializeDefaultData();
+          
+          // Initialize notifications only on mobile platforms
+          if (Platform.OS !== 'web') {
+            await initializeNotifications();
+          }
+          
+          // Mark as ready
+          setIsReady(true);
+          
+          // Show custom splash for a minimum duration
+          setTimeout(() => {
+            setShowCustomSplash(false);
+          }, 3000); // Show for 3 seconds minimum
+        }
+      } catch (error) {
+        console.error('Error during app initialization:', error);
+        // Still mark as ready to prevent infinite loading
+        setIsReady(true);
         setShowCustomSplash(false);
-      }, 3000); // Show for 3 seconds minimum
+      }
     }
+
+    prepare();
   }, [fontsLoaded, fontError]);
 
   const initializeNotifications = async () => {
@@ -60,8 +77,8 @@ export default function RootLayout() {
         const data = response.notification.request.content.data;
         
         if (data && data.goalId) {
-          // Navigate to goal countdown screen when notification is tapped
-          router.push(`/goal-countdown?goalId=${data.goalId}`);
+          // Note: Navigation will be handled by the auth flow
+          console.log('Notification received for goal:', data.goalId);
         }
       });
 
@@ -71,8 +88,12 @@ export default function RootLayout() {
     }
   };
 
-  // Show loading state while fonts are loading
+  // Show loading state while fonts are loading or app is not ready
   if (!fontsLoaded && !fontError) {
+    return null;
+  }
+
+  if (!isReady) {
     return null;
   }
 
@@ -94,6 +115,10 @@ export default function RootLayout() {
               <Stack.Screen name="goal-countdown" />
               <Stack.Screen name="fitness-goals" />
               <Stack.Screen name="step-tracker" />
+              <Stack.Screen name="activities" />
+              <Stack.Screen name="create-activity" />
+              <Stack.Screen name="activity-history" />
+              <Stack.Screen name="log-activity/[activity]" />
               <Stack.Screen name="+not-found" />
             </>
           )}

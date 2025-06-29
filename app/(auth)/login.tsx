@@ -8,13 +8,18 @@ export default function LoginRedirect() {
 
   useEffect(() => {
     if (!loading) {
-      if (user) {
-        // User is authenticated, redirect to main app
-        router.replace('/(tabs)');
-      } else {
-        // User is not authenticated, redirect to welcome screen
-        router.replace('/(auth)/welcome');
-      }
+      // Use setTimeout to ensure navigation happens after component is mounted
+      const timer = setTimeout(() => {
+        if (user) {
+          // User is authenticated, redirect to main app
+          router.replace('/(tabs)');
+        } else {
+          // User is not authenticated, redirect to welcome screen
+          router.replace('/(auth)/welcome');
+        }
+      }, 100);
+
+      return () => clearTimeout(timer);
     }
   }, [user, loading]);
 

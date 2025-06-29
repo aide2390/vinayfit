@@ -4,6 +4,7 @@ import { useUserRole } from '@/contexts/UserContext';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Import all role-specific views
 import TodayClientView from '@/components/today/TodayClientView';
@@ -14,16 +15,22 @@ import TodayHRView from '@/components/today/TodayHRView';
 
 export default function TodayScreen() {
   const { userRole } = useUserRole();
+  const { user, loading } = useAuth();
   const colorScheme = useColorScheme();
   const colors = getColors(colorScheme);
 
   useEffect(() => {
-    if (!userRole) {
-      router.replace('/(auth)/login');
-    }
-  }, [userRole]);
+    if (!loading && !user) {
+      // Use setTimeout to ensure navigation happens after component is mounted
+      const timer = setTimeout(() => {
+        router.replace('/(auth)/welcome');
+      }, 100);
 
-  if (!userRole) {
+      return () => clearTimeout(timer);
+    }
+  }, [user, loading]);
+
+  if (loading || !user) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Text style={[styles.loadingText, { color: colors.text }]}>Loading...</Text>
