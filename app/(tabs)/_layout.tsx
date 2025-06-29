@@ -1,17 +1,19 @@
 import { Tabs } from 'expo-router';
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Platform, View } from 'react-native';
 import { Chrome as Home, Dumbbell, MessageSquare, Play, User, Users, Apple, Shield, Briefcase } from 'lucide-react-native';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 import { useUserRole } from '@/contexts/UserContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const colors = getColors(colorScheme);
   const { userRole } = useUserRole();
   const { user, loading } = useAuth();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -163,46 +165,51 @@ export default function TabLayout() {
   const tabs = getTabsForRole();
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: [
-          styles.tabBar, 
-          { 
-            backgroundColor: colors.surface,
-            borderTopColor: colors.border,
-          }
-        ],
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textTertiary,
-        tabBarLabelStyle: styles.tabBarLabel,
-        sceneStyle: { backgroundColor: colors.background },
-      }}>
-      {tabs.map((tab) => {
-        const IconComponent = tab.icon;
-        return (
-          <Tabs.Screen
-            key={tab.name}
-            name={tab.name}
-            options={{
-              title: tab.title,
-              tabBarIcon: ({ size, color }) => (
-                <IconComponent size={size} color={color} />
-              ),
-            }}
-          />
-        );
-      })}
-    </Tabs>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: [
+            styles.tabBar, 
+            { 
+              backgroundColor: colors.surface,
+              borderTopColor: colors.border,
+              paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+              height: (insets.bottom > 0 ? insets.bottom : 0) + 64,
+            }
+          ],
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textTertiary,
+          tabBarLabelStyle: styles.tabBarLabel,
+          sceneStyle: { backgroundColor: colors.background },
+        }}>
+        {tabs.map((tab) => {
+          const IconComponent = tab.icon;
+          return (
+            <Tabs.Screen
+              key={tab.name}
+              name={tab.name}
+              options={{
+                title: tab.title,
+                tabBarIcon: ({ size, color }) => (
+                  <IconComponent size={size} color={color} />
+                ),
+              }}
+            />
+          );
+        })}
+      </Tabs>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   tabBar: {
     borderTopWidth: 1,
     paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 8,
-    height: Platform.OS === 'ios' ? 88 : 64,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },

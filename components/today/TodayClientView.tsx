@@ -21,12 +21,12 @@ import {
   Clock,
   Flame
 } from 'lucide-react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme, getColors } from '../../hooks/useColorScheme';
 import { router } from 'expo-router';
 import { WorkoutPlan, WorkoutTemplate } from '@/types/workout';
 import { getClientPlans, getTemplate } from '@/utils/storage';
 import { getDayOfWeek, isToday } from '@/utils/workoutUtils';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -34,6 +34,7 @@ export default function TodayClientView() {
   const colorScheme = useColorScheme();
   const colors = getColors(colorScheme);
   const styles = createStyles(colors);
+  const insets = useSafeAreaInsets();
 
   const [showMissedWorkout, setShowMissedWorkout] = useState(true);
   const [steps, setSteps] = useState(2847);
@@ -154,11 +155,17 @@ export default function TodayClientView() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView 
         style={styles.scrollView} 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { 
+            paddingTop: insets.top + 10,
+            paddingBottom: 120, // Space for tab bar and FAB
+          }
+        ]}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -340,7 +347,10 @@ export default function TodayClientView() {
 
       {/* Floating Action Button */}
       <TouchableOpacity 
-        style={styles.fab} 
+        style={[
+          styles.fab,
+          { bottom: 100 + (insets.bottom > 0 ? insets.bottom : 0) }
+        ]} 
         onPress={handleFabPress}
       >
         <Plus size={28} color="#FFFFFF" strokeWidth={2} />
@@ -352,18 +362,15 @@ export default function TodayClientView() {
 const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 50, // Add top padding for status bar
-    paddingBottom: 120, // Add padding for tab bar and FAB
+    flexGrow: 1,
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 10,
     paddingBottom: 20,
   },
   dateText: {
@@ -667,7 +674,6 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 100, // Position above tab bar
     right: 20,
     width: 56,
     height: 56,
