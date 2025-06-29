@@ -1,17 +1,19 @@
 import { Tabs } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { Chrome as Home, Dumbbell, MessageSquare, Play, User, Users, Apple, Shield, Briefcase } from 'lucide-react-native';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 import { useUserRole } from '@/contexts/UserContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const colors = getColors(colorScheme);
   const { userRole } = useUserRole();
   const { user, loading } = useAuth();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -166,10 +168,15 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: [styles.tabBar, { 
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-        }],
+        tabBarStyle: [
+          styles.tabBar, 
+          { 
+            backgroundColor: colors.surface,
+            borderTopColor: colors.border,
+            paddingBottom: Platform.OS === 'ios' ? insets.bottom : 8,
+            height: Platform.OS === 'ios' ? 60 + insets.bottom : 60,
+          }
+        ],
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarLabelStyle: styles.tabBarLabel,
@@ -197,8 +204,6 @@ const styles = StyleSheet.create({
   tabBar: {
     borderTopWidth: 1,
     paddingTop: 8,
-    paddingBottom: 8,
-    height: 60,
     position: 'absolute',
     bottom: 0,
     left: 0,

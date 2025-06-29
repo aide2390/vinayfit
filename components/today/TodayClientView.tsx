@@ -27,6 +27,7 @@ import { router } from 'expo-router';
 import { WorkoutPlan, WorkoutTemplate } from '@/types/workout';
 import { getClientPlans, getTemplate } from '@/utils/storage';
 import { getDayOfWeek, isToday } from '@/utils/workoutUtils';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -34,6 +35,7 @@ export default function TodayClientView() {
   const colorScheme = useColorScheme();
   const colors = getColors(colorScheme);
   const styles = createStyles(colors);
+  const insets = useSafeAreaInsets();
 
   const [showMissedWorkout, setShowMissedWorkout] = useState(true);
   const [steps, setSteps] = useState(2847);
@@ -154,8 +156,15 @@ export default function TodayClientView() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + 80 } // Add extra padding for tab bar
+        ]}
+      >
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.dateText}>{getCurrentDate()}</Text>
@@ -332,13 +341,16 @@ export default function TodayClientView() {
             </View>
           </View>
         </View>
-
-        {/* Spacing for FAB */}
-        <View style={{ height: 100 }} />
       </ScrollView>
 
       {/* Floating Action Button */}
-      <TouchableOpacity style={styles.fab} onPress={handleFabPress}>
+      <TouchableOpacity 
+        style={[
+          styles.fab,
+          { bottom: insets.bottom + 80 } // Position above tab bar
+        ]} 
+        onPress={handleFabPress}
+      >
         <Plus size={28} color="#FFFFFF" strokeWidth={2} />
       </TouchableOpacity>
     </SafeAreaView>
@@ -352,6 +364,9 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   header: {
     paddingHorizontal: 20,
@@ -659,7 +674,6 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 90,
     right: 20,
     width: 56,
     height: 56,
