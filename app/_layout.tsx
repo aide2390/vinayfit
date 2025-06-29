@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { View, StyleSheet } from 'react-native';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { useFonts } from 'expo-font';
 import {
@@ -98,33 +99,42 @@ export default function RootLayout() {
   }
 
   return (
-    <UserProvider>
-      <AuthProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          {showCustomSplash ? (
-            <Stack.Screen name="splash" />
-          ) : (
-            <>
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="templates" />
-              <Stack.Screen name="create-template" />
-              <Stack.Screen name="workout-plans" />
-              <Stack.Screen name="create-plan" />
-              <Stack.Screen name="set-fitness-goal" />
-              <Stack.Screen name="goal-countdown" />
-              <Stack.Screen name="fitness-goals" />
-              <Stack.Screen name="step-tracker" />
-              <Stack.Screen name="activities" />
-              <Stack.Screen name="create-activity" />
-              <Stack.Screen name="activity-history" />
-              <Stack.Screen name="log-activity/[activity]" />
-              <Stack.Screen name="+not-found" />
-            </>
-          )}
-        </Stack>
-        <StatusBar style="auto" />
-      </AuthProvider>
-    </UserProvider>
+    <View style={styles.container}>
+      <UserProvider>
+        <AuthProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            {showCustomSplash ? (
+              <Stack.Screen name="splash" />
+            ) : (
+              <>
+                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="templates" />
+                <Stack.Screen name="create-template" />
+                <Stack.Screen name="workout-plans" />
+                <Stack.Screen name="create-plan" />
+                <Stack.Screen name="set-fitness-goal" />
+                <Stack.Screen name="goal-countdown" />
+                <Stack.Screen name="fitness-goals" />
+                <Stack.Screen name="step-tracker" />
+                <Stack.Screen name="activities" />
+                <Stack.Screen name="create-activity" />
+                <Stack.Screen name="activity-history" />
+                <Stack.Screen name="log-activity/[activity]" />
+                <Stack.Screen name="+not-found" />
+              </>
+            )}
+          </Stack>
+          <StatusBar style="auto" />
+        </AuthProvider>
+      </UserProvider>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC', // Light mode background
+  },
+});

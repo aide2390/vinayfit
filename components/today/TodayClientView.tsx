@@ -154,7 +154,7 @@ export default function TodayClientView() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView 
         style={styles.scrollView} 
         showsVerticalScrollIndicator={false}
@@ -345,7 +345,7 @@ export default function TodayClientView() {
       >
         <Plus size={28} color="#FFFFFF" strokeWidth={2} />
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -358,11 +358,11 @@ const createStyles = (colors: any) => StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100, // Add padding for tab bar and FAB
+    paddingBottom: 120, // Add padding for tab bar and FAB
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 60, // Add top padding for status bar
+    paddingTop: 10,
     paddingBottom: 20,
   },
   dateText: {

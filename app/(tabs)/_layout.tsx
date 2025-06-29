@@ -1,11 +1,12 @@
 import { Tabs } from 'expo-router';
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Platform, View } from 'react-native';
 import { Chrome as Home, Dumbbell, MessageSquare, Play, User, Users, Apple, Shield, Briefcase } from 'lucide-react-native';
 import { useColorScheme, getColors } from '@/hooks/useColorScheme';
 import { useUserRole } from '@/contexts/UserContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
 import { router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -163,45 +164,54 @@ export default function TabLayout() {
   const tabs = getTabsForRole();
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: [
-          styles.tabBar, 
-          { 
-            backgroundColor: colors.surface,
-            borderTopColor: colors.border,
-          }
-        ],
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textTertiary,
-        tabBarLabelStyle: styles.tabBarLabel,
-      }}>
-      {tabs.map((tab) => {
-        const IconComponent = tab.icon;
-        return (
-          <Tabs.Screen
-            key={tab.name}
-            name={tab.name}
-            options={{
-              title: tab.title,
-              tabBarIcon: ({ size, color }) => (
-                <IconComponent size={size} color={color} />
-              ),
-            }}
-          />
-        );
-      })}
-    </Tabs>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: [
+            styles.tabBar, 
+            { 
+              backgroundColor: colors.surface,
+              borderTopColor: colors.border,
+            }
+          ],
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textTertiary,
+          tabBarLabelStyle: styles.tabBarLabel,
+        }}>
+        {tabs.map((tab) => {
+          const IconComponent = tab.icon;
+          return (
+            <Tabs.Screen
+              key={tab.name}
+              name={tab.name}
+              options={{
+                title: tab.title,
+                tabBarIcon: ({ size, color }) => (
+                  <IconComponent size={size} color={color} />
+                ),
+              }}
+            />
+          );
+        })}
+      </Tabs>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   tabBar: {
     borderTopWidth: 1,
     paddingTop: 8,
     paddingBottom: Platform.OS === 'ios' ? 20 : 8,
     height: Platform.OS === 'ios' ? 80 : 60,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   tabBarLabel: {
     fontFamily: 'Inter-Medium',
