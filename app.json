@@ -8,7 +8,6 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "projectId": "your-expo-project-id",
     "ios": {
       "supportsTablet": true
     },
